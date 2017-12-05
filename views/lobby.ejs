@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <%- include("partials/head") %>
+
+  <body>
+    <h2>Room list</h2>
+
+    <div>
+      <label>Name:
+        <input type="text" id="userName" placeholder="User Name" />
+      </label>
+    </div>
+
+    <table id="roomList">
+      <h2>Rooms</h2>
+      <thead>
+        <th>Room</th>
+      </thead>
+      <% rooms.forEach((room, roomId) => { %>
+        <tr id="<%= roomId %>">
+          <td><button onclick="joinRoom(<%= roomId %>)">
+            <%= room.name %></button></td>
+        </tr>
+      <% }); %>
+    </table>
+
+    <div>
+      <h3>Create a new room</h3>
+      <label>Room name:
+        <input type="text" id="roomName" placeholder="New Room" />
+      </label>
+      <button onclick="addRoom()">Add room</button>
+    </div>
+
+    <script src="/js/lobby.js"></script>
+  </body>
+</html>

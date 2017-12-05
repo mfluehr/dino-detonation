@@ -1,0 +1,24 @@
+{
+  "name": "dino-detonation",
+  "version": "1.0.0",
+  "description": "A multiplayer game played in the browser",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mfluehr/dino-detonation"
+  },
+  "author": "Mark Fluehr",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^4.0.0",
+    "ejs": "^2.5.7",
+    "express": "^4.16.2",
+    "socket.io": "^2.0.4"
+  },
+  "devDependencies": {
+    "nodemon": "^1.12.1"
+  }
+}
