@@ -55,10 +55,8 @@ const Level = ({
   };
 
   const addBomb = (userId, x, y) => {
-    let tileX = Math.round(x / tileWidth);
-        tileY = Math.round(y / tileHeight);
-
-    console.log(tileX, tileY);
+    x = tileX(x);
+    y = tileY(y);
 
     return true;
   };
@@ -69,6 +67,14 @@ const Level = ({
 
   const resetUser = (userId) => {
     ////
+  };
+
+  const tileX = (x) => {
+    return Math.round(x / tileWidth);
+  };
+
+  const tileY = (y) => {
+    return Math.round(y / tileHeight);
   };
 
 

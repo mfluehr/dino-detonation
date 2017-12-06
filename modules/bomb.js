@@ -1,10 +1,13 @@
-const Bomb = () => {
-  let x, y,
-      owner,
-      speed,
-      timer;
-
-  const explode = () => {}
+const Bomb = ({
+  x, y,
+  owner,
+  range,
+  speed,
+  timer
+}) => {
+  const explode = () => {
+    ////
+  };
 
   return {
     explode
