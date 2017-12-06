@@ -65,7 +65,7 @@ const findGoodBonus = (avatar) => {
 };
 
 const needsBonus = (avatar, bonus) => {
-  //
+  ////
 };
 
 const closerAvatarWantsBonus = (avatar, otherPath, bonus) => {
