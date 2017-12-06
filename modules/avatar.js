@@ -1,10 +1,17 @@
+const DIRECTIONS = Object.freeze({
+  "top": 1,
+  "right": 2,
+  "bottom": 3,
+  "left": 4
+});
+
+
 const Avatar = (socket, user) => {
   const bonuses = new Set();
 
   let playerNumber = 0,
       x = 0,
       y = 0,
-      bombs = [],
       bombsUsed = 0,
       capacity = 0,
       minCapacity = 0,
@@ -32,7 +39,7 @@ const Avatar = (socket, user) => {
 
     bombsUsed = 0;
     capacity = minCapacity;
-    ////face = DIRECTIONS.bottom;
+    face = DIRECTIONS.bottom;
     speed = minSpeed;
   };
 

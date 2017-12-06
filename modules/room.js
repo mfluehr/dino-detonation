@@ -46,7 +46,7 @@ const Room = (name, lobby) => {
     users.set(userId, user);
 
     if (level) {
-      user.avatar.reset(roomOptions.avatars);
+      level.addUser(user);
     }
 
     user.socket.emit("joinRoom");
@@ -71,7 +71,7 @@ const Room = (name, lobby) => {
     level = Level(roomOptions.levels);
 
     users.forEach((user, userId) => {
-      level.resetUser(userId);
+      level.addUser(userId);
     });
   };
 

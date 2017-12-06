@@ -1,4 +1,6 @@
 const Bomb = require("./bomb");
+//// const Pickup = require("./pickup");
+//// const Tile = require("./tile");
 
 const tileWidth = 80;
 const tileHeight = 80;
@@ -32,22 +34,22 @@ const maps = {
 
 const Level = ({
   name,
-  timer
+  room
 }) => {
   const self = {
     get reset () { return reset; },
     get addBomb () { return addBomb; },
-    get removeUser () { return removeUser; },
-    get resetUser () { return resetUser; }
+    get addUser () { return resetUser; },
+    get removeUser () { return removeUser; }
   };
 
 
   let map = maps[name],
       tiles = map.tiles,
       homes = map.players;
-  let bombs = [],
-      pickups = [],
-      running = false;
+  let avatars,
+      bombs,
+      pickups;
 
 
   const reset = (data) => {
@@ -58,14 +60,26 @@ const Level = ({
     x = tileX(x);
     y = tileY(y);
 
+    bomb = Bomb({
+      level = self,
+      x, y,
+      userId,
+      range,
+      speed,
+      timer
+    });
+
+
+
+
     return true;
   };
 
-  const removeUser = (userId) => {
-    ////
+  const addUser = (userId) => {
+    room.users.get(userId).avatar.reset(room.roomOptions.avatars);
   };
 
-  const resetUser = (userId) => {
+  const removeUser = (userId) => {
     ////
   };
 
