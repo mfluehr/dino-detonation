@@ -1,6 +1,7 @@
+const Util = require("./util");
 const Bomb = require("./bomb");
 //// const Pickup = require("./pickup");
-//// const Tile = require("./tile");
+const Tile = require("./tile");
 
 const tileWidth = 80;
 const tileHeight = 80;
@@ -40,16 +41,14 @@ const Level = ({
     get reset () { return reset; },
     get addBomb () { return addBomb; },
     get addUser () { return resetUser; },
-    get removeUser () { return removeUser; }
+    get deleteUser () { return deleteUser; }
   };
 
 
-  let map = maps[name],
-      tiles = map.tiles,
-      homes = map.players;
-  let avatars,
-      bombs,
-      pickups;
+  let map = initMap(name),
+      avatars = initAvatars(room.users),
+      bombs = Util.Array2(level.width, level.height),
+      pickups = Util.Array2(level.width, level.height);
 
 
   const reset = (data) => {
@@ -61,26 +60,67 @@ const Level = ({
     y = tileY(y);
 
     bomb = Bomb({
-      level = self,
+      level: self,
       x, y,
-      userId,
-      range,
-      speed,
-      timer
+      userId
     });
 
-
-
+    bombs[x][y] = bomb;
 
     return true;
   };
 
-  const addUser = (userId) => {
-    room.users.get(userId).avatar.reset(room.roomOptions.avatars);
+  const addPickup = (x, y) => {
+    ////
   };
 
-  const removeUser = (userId) => {
-    ////
+  const deleteUser = (userId) => {
+    const avatar = room.users.get(userId).avatar;
+
+    avatar.kill();
+    avatars.delete(avatar);  // TODO: only delete once animation completed
+  };
+
+  const freePlayerNumber = () => {
+    const usedNums = new Set();
+    let num = 0;
+
+    avatars.forEach((avatar) => {
+      usedNums.add(avatar.playerNumber);
+    });
+
+    for (let i = 1; i < map.homes.length; i ++) {
+      if (!usedNums.has(i)) {
+        num = i;
+        return;
+      }
+    }
+
+    return num;
+  };
+
+  const initAvatars = (users) {
+    const avatars = new Set();
+
+    users.forEach((user, userId) => {
+      resetAvatar(user.avatar);
+      avatars.add(user.avatar);
+    });
+
+    return avatars;
+  };
+
+  const initMap = (name) {
+    const map = maps[name];
+
+    return map;
+  };
+
+  const resetAvatar = (avatar) => {
+    avatar.reset();
+    avatar.playerNumber = freePlayerNumber();
+    avatar.x = map.homes[avatar.playerNumber].x;
+    avatar.y = map.homes[avatar.playerNumber].y;
   };
 
   const tileX = (x) => {

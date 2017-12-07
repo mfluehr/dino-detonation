@@ -5,6 +5,7 @@ const RoomOptions = () => {
   };
 
   const avatars = {
+    face: 3,  //// DIRECTIONS.bottom
     minCapacity: 4,
     maxCapacity: 10,
     minSpeed: .4,
@@ -12,6 +13,7 @@ const RoomOptions = () => {
   };
 
   const bombs = {
+    range: 4,
     speed: .8,
     timer: 2
   };

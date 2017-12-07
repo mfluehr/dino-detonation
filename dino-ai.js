@@ -23,7 +23,7 @@ const findPath = (a, b, avoid = [
 
   while (searching) {
     if (travelTime > threatTime) {
-      allow(tile)
+      allow(tile);
     }
   }
 
@@ -44,7 +44,7 @@ const findGoodBonus = (avatar) => {
   let bestPath = Path(),
       bestValue = Infinity;
 
-  for (bonus of bonuses) {
+  for (let bonus of bonuses) {
     if (needsBonus(avatar, bonus) &&
         bonus.value >= bestValue) {
       let path = safePath(avatar, bonus);
@@ -72,7 +72,7 @@ const closerAvatarWantsBonus = (avatar, otherPath, bonus) => {
   let closestAvatar,
       closestPath = Infinity;
 
-  for (n of avatars) {
+  for (let n of avatars) {
     if (!n.hasBonus(bonus)) {
       let enemyPath = safePath(n, bonus);
 
@@ -121,18 +121,18 @@ const findGoodMine = (avatar) => {
 const mapThreatTimes = (avatar) => {
   let threatMap = [[]];
 
-  for (tile of tiles) {
+  for (let tile of tiles) {
     tile.timer = 0;
 
     if (tile.type == explosion) {
-      for (tile of tilesInReach) {
+      for (let tile of tilesInReach) {
         tile.timer = explosion.timer;
       }
     }
     else if (tile.type == bomb) {
       if (isDynamite(bomb)) {
         if (bomb.owner != avatar || avatar.friend) {
-          for (tile of tilesInReach) {
+          for (let tile of tilesInReach) {
             tile.timer = Infinity;
           }
         }
@@ -140,7 +140,7 @@ const mapThreatTimes = (avatar) => {
       else {
         let timer = bomb.timer + settings.explosions.timer;
 
-        for (tile of tilesInReach) {
+        for (let tile of tilesInReach) {
           if (timer > tile.timer) {
             tile.timer = timer;
           }
@@ -153,14 +153,11 @@ const mapThreatTimes = (avatar) => {
 };
 
 const mapDynamite = (avatar) => {
-  let dynamiteMap = new Array(level.height),
+  let dynamiteMap = Util.Array2(level.width, level.height),
       friends = 0,
       enemies = 0;
 
-  const row = new Array(level.width).fill(0);
-  dynamiteMap.fill(row);
-
-  for (bomb of avatar.bombs) {
+  for (let bomb of avatar.bombs) {
     let x1 = Math.max(0, bomb.pos.x - bomb.range),
         x2 = Math.min(level.width, bomb.pos.x + bomb.range),
         y1 = Math.max(0, bomb.pos.y - bomb.range),
@@ -177,7 +174,7 @@ const mapDynamite = (avatar) => {
     // ...
   }
 
-  for (n of avatars) {
+  for (let  of avatars) {
     if (dynamiteMap(n.pos)) {
       if (n.team == avatar.team) {
         friends ++;

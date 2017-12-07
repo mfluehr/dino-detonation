@@ -1,6 +1,7 @@
 const Bomb = ({
+  level,
   x, y,
-  owner,
+  user,
   range,
   speed,
   timer

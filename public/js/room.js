@@ -49,7 +49,7 @@ roomIo.on("addUser", () => {
   ////
 });
 
-roomIo.on("removeUser", (userId) => {
+roomIo.on("deleteUser", (userId) => {
   ////
 });
 

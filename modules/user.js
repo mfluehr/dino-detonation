@@ -38,10 +38,10 @@ const User = (socket, lobby) => {
 
   socket.on("disconnect", function (reason) {
     if (room) {
-      room.removeUser(userId);
+      room.deleteUser(userId);
     }
 
-    lobby.removeUser(userId);
+    lobby.deleteUser(userId);
 
     console.log("User out:", name);
   });
@@ -62,7 +62,7 @@ const User = (socket, lobby) => {
 
   socket.on("leaveRoom", function (onerror) {
     if (room) {
-      room.removeUser(userId);
+      room.deleteUser(userId);
     }
     else {
       onerror("You aren't in a room.");

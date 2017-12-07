@@ -9,24 +9,24 @@ const Room = (name, lobby) => {
     get name () { return name; },
 
     get addUser () { return addUser; },
-    get removeUser () { return removeUser; },
+    get deleteUser () { return deleteUser; },
     get startGame () { return startGame; }
   };
 
 
-  const roomId = Math.random(), ////
+  const roomId = Math.random(), //// TODO: better way
       roomIo = lobby.io.of("/room"),
       roomOptions = RoomOptions(),
       users = new Map();
 
   let maxUsers = 2,
       level,
+      name = "New Room",
       teams = false;
 
 
   const reset = (data) => {
-    ({maxUsers, name, teams} =
-        {...{maxUsers, name, teams}, ...data});
+    ({maxUsers, name, teams} = {...{maxUsers, name, teams}, ...data});
   }
 
   const addUser = (userId) => {
@@ -46,33 +46,30 @@ const Room = (name, lobby) => {
     users.set(userId, user);
 
     if (level) {
-      level.addUser(user);
+      // TODO: dynamic adding of avatars
+      ////level.addUser(user);
     }
 
     user.socket.emit("joinRoom");
   };
 
-  const removeUser = (userId) => {
+  const deleteUser = (userId) => {
     const user = lobby.users.get(userId);
-    user.socket.broadcast.emit("removeUser", userId);
+    user.socket.broadcast.emit("deleteUser", userId);
 
     if (level) {
-      level.removeUser(user);
+      level.deleteUser(user);
     }
 
     users.delete(userId);
 
     if (users.size === 0) {
-      lobby.removeRoom(roomId);
+      lobby.deleteRoom(roomId);
     }
   };
 
   const startGame = () => {
     level = Level(roomOptions.levels);
-
-    users.forEach((user, userId) => {
-      level.addUser(userId);
-    });
   };
 
 

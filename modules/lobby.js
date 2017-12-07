@@ -10,8 +10,8 @@ const Lobby = (server) => {
 
     get addRoom () { return addRoom; },
     get addUser () { return addUser; },
-    get removeRoom () { return removeRoom; },
-    get removeUser () { return removeUser; }
+    get deleteRoom () { return deleteRoom; },
+    get deleteUser () { return deleteUser; }
   };
 
 
@@ -58,12 +58,12 @@ const Lobby = (server) => {
     return user.id;
   };
 
-  const removeRoom = (roomId) => {
+  const deleteRoom = (roomId) => {
     rooms.delete(roomId);
-    ////socket.broadcast.emit("removeRoom", roomId);
+    ////socket.broadcast.emit("deleteRoom", roomId);
   };
 
-  const removeUser = (userId) => {
+  const deleteUser = (userId) => {
     users.delete(userId);
   };
 
