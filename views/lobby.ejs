@@ -1,39 +1,46 @@
 <!DOCTYPE html>
 
 <html lang="en">
-  <%- include("partials/head") %>
+  <head>
+    <meta charset="utf-8" />
+    <title>Dino Detonation</title>
+
+    <link href="/css/styles.css" rel="stylesheet" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
+    <script src="/js/lobby.js"></script>
+    <script src="/js/room.js"></script>
+  </head>
 
   <body>
-    <h2>Room list</h2>
+    <div id="lobby">
+      <div>
+        <label>User name:
+          <input type="text" id="userName" placeholder="Anonymous" />
+        </label>
+      </div>
 
-    <div>
-      <label>Name:
-        <input type="text" id="userName" placeholder="User Name" />
-      </label>
+      <table id="roomList">
+        <h2>Rooms</h2>
+        <thead>
+          <th>Room</th>
+        </thead>
+      </table>
+
+      <div>
+        <h3>Create a new room</h3>
+        <label>Room name:
+          <input type="text" id="roomName" placeholder="New Room" />
+        </label>
+        <button onclick="lobby.addRoom()">Add room</button>
+      </div>
     </div>
 
-    <table id="roomList">
-      <h2>Rooms</h2>
-      <thead>
-        <th>Room</th>
-      </thead>
-      <% rooms.forEach((room, roomId) => { %>
-        <tr id="<%= roomId %>">
-          <td><button onclick="joinRoom(<%= roomId %>)">
-            <%= room.name %></button></td>
-        </tr>
-      <% }); %>
-    </table>
-
-    <div>
-      <h3>Create a new room</h3>
-      <label>Room name:
-        <input type="text" id="roomName" placeholder="New Room" />
-      </label>
-      <button onclick="addRoom()">Add room</button>
+    <div id="room">
+      <div>
+      </div>
     </div>
 
-    <script src="/js/lobby.js"></script>
-    <!-- <script src="/js/room.js"></script> -->
+    <script src="/js/app.js"></script>
   </body>
 </html>

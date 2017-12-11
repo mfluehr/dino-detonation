@@ -9,11 +9,11 @@ const User = (socket, lobby) => {
     get room () { return room; },
     get socket () { return socket; },
 
-    get reset () { return reset; }
+    get reset () { return reset; },
+    get joinRoom () { return joinRoom; }
   };
 
-
-  const userId = socket.id,
+  const userId = socket.conn.id,
       avatar = Avatar(socket, self);
 
   let email = "noreply@example.com",
@@ -23,6 +23,10 @@ const User = (socket, lobby) => {
 
   const reset = (data) => {
     ({email, name} = {...{email, name}, ...data});
+  };
+
+  const joinRoom = (room) => {
+    room = room;
   };
 
 
@@ -47,10 +51,10 @@ const User = (socket, lobby) => {
   });
 
   socket.on("joinRoom", function (roomId, onerror) {
-    const tempRoom = lobby.rooms.get(roomId);
+    const room = lobby.rooms.get(roomId);
 
-    if (tempRoom) {
-      Promise.resolve(tempRoom.addUser(userId))
+    if (room) {
+      Promise.resolve(room.addUser(userId))
           .catch((err) => {
             onerror(err);
           });
@@ -65,6 +69,7 @@ const User = (socket, lobby) => {
       room.deleteUser(userId);
     }
     else {
+      //// TODO: don't let users crash the app with invalid messages
       onerror("You aren't in a room.");
     }
   });

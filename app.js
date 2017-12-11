@@ -22,7 +22,6 @@ app.use("/", routes);
 // Folder for public files
 app.use(express.static("public"));
 
-
 // Game lobby
 const lobby = require("./modules/lobby")(server);
 routes.setLobby(lobby);

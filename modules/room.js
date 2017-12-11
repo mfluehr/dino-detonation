@@ -14,8 +14,8 @@ const Room = (name = "New Room", lobby) => {
   };
 
 
-  const roomId = Math.random(),  //// TODO: better way
-      roomIo = lobby.io.of("/room"),
+  const roomId = "r" + Math.random(),  //// TODO: better way
+      roomIo = lobby.io.of(`/${roomId}`),
       roomOptions = RoomOptions(),
       users = new Map();
 
@@ -31,17 +31,17 @@ const Room = (name = "New Room", lobby) => {
   const addUser = (userId) => {
     const user = lobby.users.get(userId);
 
-    if (user.room) {
-      return Promise.reject("The user is already in another room.");
-    }
-    else if (users.get(userId)) {
+    if (users.get(userId)) {
       return Promise.reject("The user is already in the specified room.");
+    }
+    else if (user.room) {
+      return Promise.reject("The user is already in another room.");
     }
     else if (users.size >= maxUsers) {
       return Promise.reject("The specified room is already full.");
     }
 
-    user.room = self;
+    user.joinRoom(self);
     users.set(userId, user);
 
     if (level) {
@@ -49,7 +49,9 @@ const Room = (name = "New Room", lobby) => {
       ////level.addUser(user);
     }
 
-    user.socket.emit("joinRoom");
+    user.socket.emit("joinRoom", {
+      roomId
+    });
   };
 
   const deleteUser = (userId) => {
@@ -72,10 +74,23 @@ const Room = (name = "New Room", lobby) => {
   };
 
 
-  roomIo.on("zzz", () => {
-    ////
-    console.log("ZZZZ!!!");
+
+  roomIo.on("connection", function (socket) {
+    const user = users.get(socket.conn.id);
+
+    ////console.log(user);
+
+    socket.on("dropBomb", function () {
+      console.log("Drop!!");
+    });
+
+    socket.on("halt", function () {
+      ////
+      console.log("Halt!");
+    });
   });
+
+
 
 
   return self;

@@ -1,80 +1,73 @@
 "use strict";
 
-const url = "localhost:4000";
-const lobbyIo = io.connect(`${url}/lobby`);
-const roomIo = io.connect(`${url}/room`);
+const Room = (roomId) => {
+  const roomIo = io.connect(`${url}/${roomId}`);
 
-const actions = {
-  " ": ["dropBomb", false],
-  "ArrowUp": ["moveUp", false],
-  "ArrowRight": ["moveRight", false],
-  "ArrowDown": ["moveDown", false],
-  "ArrowLeft": ["moveLeft", false]
-};
-
-
-const endAction = (action) => {
-  action[1] = false;
-
-  switch (action[0]) {
-    case "moveUp":
-    case "moveRight":
-    case "moveDown":
-    case "moveLeft":
-      roomIo.emit("halt");
-      break;
-  }
-};
-
-const startAction = (action) => {
-  console.log("start:",action[0]);
-
-  action[1] = true;
-
-  switch (action[0]) {
-    case "dropBomb":
-      roomIo.emit("dropBomb");
-      break;
-    case "moveUp":
-      roomIo.emit("move", 270);
-      break;
-    case "moveRight":
-      roomIo.emit("move", 0);
-      break;
-  }
-};
+  const actions = {
+    " ": ["dropBomb", false],
+    "ArrowUp": ["moveUp", false],
+    "ArrowRight": ["moveRight", false],
+    "ArrowDown": ["moveDown", false],
+    "ArrowLeft": ["moveLeft", false]
+  };
 
 
-roomIo.on("addUser", () => {
-  ////
-});
+  const endAction = (action) => {
+    action[1] = false;
 
-roomIo.on("deleteUser", (userId) => {
-  ////
-});
+    switch (action[0]) {
+      case "moveUp":
+      case "moveRight":
+      case "moveDown":
+      case "moveLeft":
+        roomIo.emit("halt");
+        break;
+    }
+  };
+
+  const startAction = (action) => {
+    console.log("start:", action[0]);
+
+    action[1] = true;
+
+    switch (action[0]) {
+      case "dropBomb":
+        roomIo.emit("dropBomb");
+        break;
+      case "moveUp":
+        roomIo.emit("move", 270);
+        break;
+      case "moveRight":
+        roomIo.emit("move", 0);
+        break;
+    }
+  };
 
 
-document.addEventListener("keydown", (e) => {
-  const action = actions[e.key];
+  roomIo.on("addUser", () => {
+    ////
+  });
 
-  if (action && !action[1]) {
-    startAction(action);
-  }
-
-  ////client.avatar.move(angle);
-});
-
-document.addEventListener("keyup", (e) => {
-  const action = actions[e.key];
-
-  if (action) {
-    endAction(action);
-  }
-});
+  roomIo.on("deleteUser", (userId) => {
+    ////
+  });
 
 
+  document.addEventListener("keydown", (e) => {
+    const action = actions[e.key];
 
+    if (action && !action[1]) {
+      startAction(action);
+    }
 
-window.onload = () => {
-  roomIo.emit("zzz");
+    ////client.avatar.move(angle);
+  });
+
+  document.addEventListener("keyup", (e) => {
+    const action = actions[e.key];
+
+    if (action) {
+      endAction(action);
+    }
+  });
 };

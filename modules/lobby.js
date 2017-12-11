@@ -54,13 +54,13 @@ const Lobby = (server) => {
 
     const user = User(socket, self);
     users.set(user.id, user);
-    socket.broadcast.emit("joinRoom", user.id);
+    //// socket.broadcast.emit("joinRoom", user.id);
     return user.id;
   };
 
   const deleteRoom = (roomId) => {
     rooms.delete(roomId);
-    ////socket.broadcast.emit("deleteRoom", roomId);
+    //// socket.broadcast.emit("deleteRoom", roomId);
   };
 
   const deleteUser = (userId) => {
@@ -69,10 +69,11 @@ const Lobby = (server) => {
 
 
   lobbyIo.on("connection", function (socket) {
-    Promise.resolve(addUser(socket)).catch((err) => {
-      socket.emit("connectionError", err);
-      socket.disconnect();
-    });
+    Promise.resolve(addUser(socket))
+        .catch((err) => {
+          socket.emit("connectionError", err);
+          socket.disconnect();
+        });
   });
 
 
