@@ -1,4 +1,4 @@
-modules.exports.DIRECTIONS = Object.freeze({
+module.exports.DIRECTIONS = Object.freeze({
   "top": 1,
   "right": 2,
   "bottom": 3,
@@ -6,7 +6,7 @@ modules.exports.DIRECTIONS = Object.freeze({
 });
 
 
-modules.exports.Array2 = (w, h, val = 0) {
+module.exports.Array2 = (w, h, val = 0) => {
   const cols = new Array(h);
   const rows = new Array(w).fill(val);
   cols.fill(rows);

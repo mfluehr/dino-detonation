@@ -1,7 +1,7 @@
 const RoomOptions = require("./room-options");
 const Level = require("./level");
 
-const Room = (name, lobby) => {
+const Room = (name = "New Room", lobby) => {
   const self = {
     get id () { return roomId },
     get users () { return users; },
@@ -14,14 +14,13 @@ const Room = (name, lobby) => {
   };
 
 
-  const roomId = Math.random(), //// TODO: better way
+  const roomId = Math.random(),  //// TODO: better way
       roomIo = lobby.io.of("/room"),
       roomOptions = RoomOptions(),
       users = new Map();
 
   let maxUsers = 2,
       level,
-      name = "New Room",
       teams = false;
 
 

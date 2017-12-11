@@ -99,7 +99,7 @@ const Level = ({
     return num;
   };
 
-  const initAvatars = (users) {
+  const initAvatars = (users) => {
     const avatars = new Set();
 
     users.forEach((user, userId) => {
@@ -110,7 +110,7 @@ const Level = ({
     return avatars;
   };
 
-  const initMap = (name) {
+  const initMap = (name) => {
     const map = maps[name];
 
     return map;

@@ -9,7 +9,7 @@ const TileType = ({
   hp = Infinity,
   pickupOdds = 0,
   wear = Infinity
-}) => {
+} = {}) => {
   return {
     get defusesBombs () { return defusesBombs; },
     get explodes () { return explodes; },
@@ -28,21 +28,21 @@ const TileType = ({
 
 const tileTypes = {
   "fire": TileType({
-    fatal = true,
-    triggersBombs = true
+    fatal: true,
+    triggersBombs: true
   }),
   "grass": TileType(),
   "marsh": TileType({
-    defusesBombs = true
+    defusesBombs: true
   }),
-  "mine",
-  "mirror",
-  "oil",
-  "pit",
-  "steel",
+  "mine": TileType(),
+  "mirror": TileType(),
+  "oil": TileType(),
+  "pit": TileType(),
+  "steel": TileType(),
   "tnt": TileType({
-    explodes = true,
-    solid = true
+    explodes: true,
+    solid: true
   }),
 };
 

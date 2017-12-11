@@ -1,6 +1,6 @@
 "use strict";
 
-const url = "http://dino.markfluehr.com:4000";
+const url = "localhost:4000";
 const lobbyIo = io.connect(`${url}/lobby`);
 const roomIo = io.connect(`${url}/room`);
 
