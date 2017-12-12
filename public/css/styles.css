@@ -4,6 +4,23 @@ html {
   font-family: sans-serif;
 }
 
+body {
+  padding: 0;
+  font-size: 105%;
+}
+
 a {
-  color: #ee3;
+  color: #de3;
+}
+
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem;
+}
+
+.col {
+  flex-basis: 50%;
+  flex-grow: 1;
 }

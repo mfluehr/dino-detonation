@@ -1,88 +1,134 @@
 const Avatar = require("./avatar");
 
-const User = (socket, lobby) => {
+const User = (lobbySocket, lobby) => {
   const self = {
     get id () { return userId; },
     get avatar () { return avatar; },
     get email () { return email; },
     get name () { return name; },
     get room () { return room; },
-    get socket () { return socket; },
+    get lobbySocket () { return lobbySocket; },
 
-    get reset () { return reset; },
-    get joinRoom () { return joinRoom; }
+    get finishRoomConnection () { return finishRoomConnection; }
   };
 
-  const userId = socket.conn.id,
-      avatar = Avatar(socket, self);
+
+  const userId = lobbySocket.conn.id,
+      avatar = Avatar(lobbySocket, self);
 
   let email = "noreply@example.com",
-      name = "Anonymous",
+      //// TODO: better default
+      name = "User" + Math.floor(Math.random() * 999),
       room;
 
 
-  const reset = (data) => {
+  const dropBomb = () => {
+    //room.level.addBomb(userId);
+    console.log("Drop");
+  };
+
+  const halt = () => {
+    // console.log("Halt!");
+  };
+
+  const finishRoomConnection = (roomSocket, room) => {
+    roomSocket.on("dropBomb", function () {
+      dropBomb();
+    });
+
+    roomSocket.on("halt", function () {
+      halt();
+    });
+
+    roomSocket.on("disconnect", function (reason) {
+      room.deleteUser(userId);
+    });
+  };
+
+  const joinRoom = (roomId) => {
+    const newRoom = lobby.rooms.get(roomId);
+
+    if (newRoom) {
+      newRoom.addUser(userId)
+          .then(() => {
+            room = newRoom;
+          })
+          .catch((err) => {
+            lobbySocket.emit("ioError", err);
+          });
+    }
+    else {
+      lobbySocket.emit("ioError", "The specified room doesn't exist.");
+    }
+  };
+
+  const login = (data) => {
+    try {
+      if (!data.name) {
+        throw "The user must have a name.";
+      }
+
+      lobby.users.forEach((user, userId) => {
+        if (user.name === data.name) {
+          throw "A user with the specified name already exists.";
+        }
+      })
+    }
+    catch (err) {
+      return Promise.reject(err);
+    }
+
     ({email, name} = {...{email, name}, ...data});
+
+    lobby.lobbyIo.emit("editUser", { userId, name });
+    return Promise.resolve();
   };
 
-  const joinRoom = (room) => {
-    room = room;
-  };
 
-
-  socket.on("addRoom", function (name, onerror) {
-    Promise.resolve(lobby.addRoom(name))
+  lobbySocket.on("addRoom", function (name) {
+    lobby.addRoom(name, self)
         .then((roomId) => {
-          lobby.rooms.get(roomId).addUser(userId);
+          joinRoom(roomId);
         })
         .catch((err) => {
-          onerror(err);
+          lobbySocket.emit("ioError", err);
         });
   });
 
-  socket.on("disconnect", function (reason) {
+  lobbySocket.on("disconnect", function (reason) {
     if (room) {
       room.deleteUser(userId);
     }
 
     lobby.deleteUser(userId);
-
-    console.log("User out:", name);
   });
 
-  socket.on("joinRoom", function (roomId, onerror) {
-    const room = lobby.rooms.get(roomId);
-
-    if (room) {
-      Promise.resolve(room.addUser(userId))
-          .catch((err) => {
-            onerror(err);
-          });
-    }
-    else {
-      onerror("The specified room doesn't exist.");
-    }
+  lobbySocket.on("joinRoom", function (roomId) {
+    joinRoom(roomId);
   });
 
-  socket.on("leaveRoom", function (onerror) {
+  lobbySocket.on("leaveRoom", function () {
     if (room) {
       room.deleteUser(userId);
     }
     else {
-      //// TODO: don't let users crash the app with invalid messages
-      onerror("You aren't in a room.");
+      lobbySocket.emit("ioError", "The user isn't in a room.");
     }
   });
 
-  socket.on("login", function (data) {
-    reset(data);
-
-    console.log("User in:", name);
+  lobbySocket.on("login", function (data) {
+    login(data)
+        .catch((err) => {
+          lobbySocket.emit("ioError", err);
+        });
   });
 
-  socket.on("startGame", function () {
+  lobbySocket.on("startGame", function () {
     if (room) {
       room.startGame();
+    }
+    else {
+      lobbySocket.emit("ioError", "The user isn't in a room.");
     }
   });
 

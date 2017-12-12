@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Dino Detonation</title>
+
+    <link href="/css/styles.css" rel="stylesheet" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
+    <script src="/js/lobby.js"></script>
+    <script src="/js/room.js"></script>
+  </head>
+
+  <body>
+    <article id="lobby-view">
+      <div class="row">
+        <div class="col">
+          <label>New room:
+            <input type="text" id="room-name" />
+          </label>
+          <button onclick="lobby.addRoom()">Create room</button>
+        </div>
+
+        <div class="col">
+          <label>User name:
+            <input type="text" id="user-name" />
+          </label>
+          <button onclick="lobby.login()">Log In</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <h2>Rooms</h2>
+          <ul id="room-list"></ul>
+        </div>
+
+        <div class="col">
+          <h2>Users</h2>
+          <ul id="user-list"></ul>
+        </div>
+      </div>
+    </article>
+
+    <!-- <article id="room-view">
+      <div>
+        <h2>Players</h2>
+      </div>
+
+      <div>
+        <h2>Options</h2>
+      </div>
+    </article> -->
+
+    <article id="game-view">
+      <div>
+      </div>
+    </article>
+
+    <script src="/js/app.js"></script>
+  </body>
+</html>

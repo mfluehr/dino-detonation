@@ -48,8 +48,16 @@ const Room = (roomId) => {
     ////
   });
 
+  roomIo.on("connectionError", (err) => {
+    console.warn(err);
+  });
+
   roomIo.on("deleteUser", (userId) => {
     ////
+  });
+
+  roomIo.on("ioError", (err) => {
+    console.warn(err);
   });
 
 

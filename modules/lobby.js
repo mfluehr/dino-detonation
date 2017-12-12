@@ -25,12 +25,18 @@ const Lobby = (server) => {
       users = new Map();
 
 
-  const addRoom = (name) => {
-    if (rooms.size >= maxRooms) {
-      return Promise.reject("The server can't hold any more rooms.");
-    }
-
+  const addRoom = (name = "", user) => {
     try {
+      if (user.room) {
+        throw "The user can't create a room while in another room.";
+      }
+      else if (rooms.size >= maxRooms) {
+        throw "The server can't hold any more rooms.";
+      }
+      else if (name.length === 0) {
+        throw "The room must have a name.";
+      }
+
       rooms.forEach((room, roomId) => {
         if (room.name === name) {
           throw "A room with the specified name already exists.";
@@ -41,38 +47,70 @@ const Lobby = (server) => {
       return Promise.reject(err);
     }
 
-    const room = Room(name, self);
-    rooms.set(room.id, room);
-    lobbyIo.emit("addRoom", {roomId: room.id, name});
-    return room.id;
+    const newRoom = Room(name, self);
+    rooms.set(newRoom.id, newRoom);
+    lobbyIo.emit("addRoom", {
+      roomId: newRoom.id,
+      name: newRoom.name
+    });
+
+    return Promise.resolve(newRoom.id);
   };
 
-  const addUser = (socket) => {
-    if (users.size >= maxUsers) {
-      return Promise.reject("The server can't hold any more users.");
+  const addUser = (lobbySocket) => {
+    try {
+      if (users.size >= maxUsers) {
+        throw "The server can't hold any more users.";
+      }
+    }
+    catch (err) {
+      return Promise.reject(err);
     }
 
-    const user = User(socket, self);
-    users.set(user.id, user);
-    //// socket.broadcast.emit("joinRoom", user.id);
-    return user.id;
+    const newUser = User(lobbySocket, self);
+    users.set(newUser.id, newUser);
+
+    //// TODO: send all data together?
+    rooms.forEach((room, roomId) => {
+      lobbySocket.emit("addRoom", {
+        roomId: room.id,
+        name: room.name
+      });
+    });
+
+    users.forEach((user, userId) => {
+      lobbySocket.emit("addUser", {
+        userId: user.id,
+        name: user.name
+      });
+    });
+
+    lobbySocket.broadcast.emit("addUser", {
+      userId: newUser.id,
+      name: newUser.name
+    });
+
+    return Promise.resolve(newUser.id);
   };
 
   const deleteRoom = (roomId) => {
     rooms.delete(roomId);
-    //// socket.broadcast.emit("deleteRoom", roomId);
   };
 
   const deleteUser = (userId) => {
     users.delete(userId);
+    lobbyIo.emit("deleteUser", { userId });
   };
 
 
-  lobbyIo.on("connection", function (socket) {
-    Promise.resolve(addUser(socket))
+  lobbyIo.on("connection", function (lobbySocket) {
+    addUser(lobbySocket)
+        .then(() => {
+          lobbySocket.emit("connectionMade");
+        })
         .catch((err) => {
-          socket.emit("connectionError", err);
-          socket.disconnect();
+          lobbySocket.emit("connectionError", err);
+          lobbySocket.disconnect();
         });
   });
 

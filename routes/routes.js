@@ -10,7 +10,7 @@ const setLobby = (data) => {
 
 
 router.get("/", (req, res, next) => {
-  return res.render("lobby", {
+  return res.render("index", {
     rooms: lobby.rooms
   });
 });

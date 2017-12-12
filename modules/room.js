@@ -14,7 +14,7 @@ const Room = (name = "New Room", lobby) => {
   };
 
 
-  const roomId = "r" + Math.random(),  //// TODO: better way
+  const roomId = "r" + Date.now(),
       roomIo = lobby.io.of(`/${roomId}`),
       roomOptions = RoomOptions(),
       users = new Map();
@@ -29,68 +29,74 @@ const Room = (name = "New Room", lobby) => {
   }
 
   const addUser = (userId) => {
-    const user = lobby.users.get(userId);
+    const newUser = lobby.users.get(userId);
 
-    if (users.get(userId)) {
-      return Promise.reject("The user is already in the specified room.");
+    try {
+      if (users.get(userId)) {
+        throw "The user is already in the specified room.";
+      }
+      else if (newUser.room) {
+        throw "The user is already in another room.";
+      }
+      else if (users.size >= maxUsers) {
+        throw "The specified room is already full.";
+      }
     }
-    else if (user.room) {
-      return Promise.reject("The user is already in another room.");
+    catch (err) {
+      return Promise.reject(err);
     }
-    else if (users.size >= maxUsers) {
-      return Promise.reject("The specified room is already full.");
-    }
-
-    user.joinRoom(self);
-    users.set(userId, user);
 
     if (level) {
       // TODO: dynamic adding of avatars
-      ////level.addUser(user);
+      ////level.addUser(newUser);
     }
 
-    user.socket.emit("joinRoom", {
+    users.set(userId, newUser);
+    newUser.lobbySocket.emit("joinRoom", {
       roomId
     });
+
+    return Promise.resolve(userId);
   };
 
   const deleteUser = (userId) => {
     const user = lobby.users.get(userId);
-    user.socket.broadcast.emit("deleteUser", userId);
 
-    if (level) {
-      level.deleteUser(user);
-    }
+    if (user) {
+      // user.lobbySocket.broadcast.emit("deleteUser", userId);
 
-    users.delete(userId);
+      if (level) {
+        level.deleteUser(user);
+      }
 
-    if (users.size === 0) {
-      lobby.deleteRoom(roomId);
+      users.delete(userId);
+
+      if (users.size === 0) {
+        lobby.deleteRoom(roomId);
+      }
     }
   };
 
   const startGame = () => {
+    console.log("Start game!");
     level = Level(roomOptions.levels);
   };
 
 
 
-  roomIo.on("connection", function (socket) {
-    const user = users.get(socket.conn.id);
+  roomIo.on("connection", function (roomSocket) {
+    const userId = roomSocket.conn.id;
+    const user = users.get(userId);
 
-    ////console.log(user);
-
-    socket.on("dropBomb", function () {
-      console.log("Drop!!");
-    });
-
-    socket.on("halt", function () {
-      ////
-      console.log("Halt!");
-    });
+    try {
+      user.finishRoomConnection(roomSocket, self);
+    }
+    catch (err) {
+      roomSocket.emit("connectionError",
+          "Connection to room failed.");
+      roomSocket.disconnect();
+    }
   });
-
-
 
 
   return self;
