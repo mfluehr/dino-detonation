@@ -1,19 +1,39 @@
 "use strict";
 
 
+// const User = () => {
+//   let userId,
+//         avatar;
+//
+//   let name = "";
+// };
+
+
+
+
+
 const Lobby = () => {
   const lobbyIo = io.connect(`${url}/lobby`);
 
-  let userName = document.getElementById("user-name"),
-      roomName = document.getElementById("room-name"),
-      roomList = document.getElementById("room-list"),
-      userList = document.getElementById("user-list");
+  const fields = {
+    createRoom: document.getElementById("create-room"),
+    login: document.getElementById("login"),
+    userList: document.getElementById("user-list"),
+    userName: document.getElementById("user-name"),
+    roomName: document.getElementById("room-name"),
+    roomList: document.getElementById("room-list")
+  };
 
-  let room;
+  let userId,
+      room,
+      user;
+
+  const rooms = new Map(),
+        users = new Map();
 
 
-  const addRoom = function () {
-    const name = roomName.value;
+  const addRoom = () => {
+    const name = fields.roomName.value;
 
     lobbyIo.emit("addRoom", name);
   };
@@ -28,7 +48,7 @@ const Lobby = () => {
 
   const login = () => {
     const info = {
-      name: userName.value
+      name: fields.userName.value
     };
 
     lobbyIo.emit("login", info);
@@ -36,14 +56,14 @@ const Lobby = () => {
 
 
   const listRoom = ({ roomId, name }) => {
-    roomList.insertAdjacentHTML("beforeend",
+    fields.roomList.insertAdjacentHTML("beforeend",
         `<li id="r${roomId}">` +
         `<a href="#" data-id="${roomId}">${name}</a>` +
         `</li>`);
   };
 
   const listUser = ({ userId, name }) => {
-    userList.insertAdjacentHTML("beforeend",
+    fields.userList.insertAdjacentHTML("beforeend",
         `<li id="u${userId}">` +
         `${name}` +
         `</li>`);
@@ -79,19 +99,19 @@ const Lobby = () => {
     console.warn(err);
   });
 
-  lobbyIo.on("connectionMade", () => {
-    login();
+  lobbyIo.on("connectionMade", (newUserId) => {
+    userId = newUserId;
 
     console.log("Connected to server.");
   });
 
   lobbyIo.on("disconnect", (reason) => {
-    while (roomList.firstChild) {
-      roomList.removeChild(roomList.firstChild);
+    while (fields.roomList.firstChild) {
+      fields.roomList.removeChild(fields.roomList.firstChild);
     }
 
-    while (userList.firstChild) {
-      userList.removeChild(userList.firstChild);
+    while (fields.userList.firstChild) {
+      fields.userList.removeChild(fields.userList.firstChild);
     }
 
     console.log("Server connection lost!");
@@ -108,7 +128,15 @@ const Lobby = () => {
   });
 
 
-  roomList.addEventListener("click", function (e) {
+  fields.createRoom.addEventListener("click", (e) => {
+    addRoom();
+  });
+
+  fields.login.addEventListener("click", (e) => {
+    login();
+  });
+
+  fields.roomList.addEventListener("click", (e) => {
     if (e.target.tagName == "A") {
       joinRoom(e.target.dataset.id);
     }
@@ -118,7 +146,6 @@ const Lobby = () => {
   return {
     addRoom,
     joinRoom,
-    leaveRoom,
-    login
+    leaveRoom
   };
 };

@@ -16,13 +16,13 @@ const Lobby = (server) => {
 
 
   const Room = require("./room"),
-      User = require("./user"),
-      io = socket(server),
-      lobbyIo = io.of("/lobby"),
-      maxRooms = 5,
-      maxUsers = 40,
-      rooms = new Map(),
-      users = new Map();
+        User = require("./user"),
+        io = socket(server),
+        lobbyIo = io.of("/lobby"),
+        maxRooms = 5,
+        maxUsers = 40,
+        rooms = new Map(),
+        users = new Map();
 
 
   const addRoom = (name = "", user) => {
@@ -105,8 +105,8 @@ const Lobby = (server) => {
 
   lobbyIo.on("connection", function (lobbySocket) {
     addUser(lobbySocket)
-        .then(() => {
-          lobbySocket.emit("connectionMade");
+        .then((userId) => {
+          lobbySocket.emit("connectionMade", userId);
         })
         .catch((err) => {
           lobbySocket.emit("connectionError", err);

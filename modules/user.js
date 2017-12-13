@@ -1,4 +1,6 @@
 const Avatar = require("./avatar");
+const randomName = require("./random-name");
+
 
 const User = (lobbySocket, lobby) => {
   const self = {
@@ -14,11 +16,10 @@ const User = (lobbySocket, lobby) => {
 
 
   const userId = lobbySocket.conn.id,
-      avatar = Avatar(lobbySocket, self);
+        avatar = Avatar(lobbySocket, self);
 
   let email = "noreply@example.com",
-      //// TODO: better default
-      name = "User" + Math.floor(Math.random() * 999),
+      name = randomName(),
       room;
 
 

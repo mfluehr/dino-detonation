@@ -1,6 +1,7 @@
 const RoomOptions = require("./room-options");
 const Level = require("./level");
 
+
 const Room = (name = "New Room", lobby) => {
   const self = {
     get id () { return roomId },
@@ -14,10 +15,10 @@ const Room = (name = "New Room", lobby) => {
   };
 
 
-  const roomId = "r" + Date.now(),
-      roomIo = lobby.io.of(`/${roomId}`),
-      roomOptions = RoomOptions(),
-      users = new Map();
+  const roomId = "r" + Date.now() + Math.random(),
+        roomIo = lobby.io.of(`/${roomId}`),
+        roomOptions = RoomOptions(),
+        users = new Map();
 
   let maxUsers = 2,
       level,
@@ -85,8 +86,8 @@ const Room = (name = "New Room", lobby) => {
 
 
   roomIo.on("connection", function (roomSocket) {
-    const userId = roomSocket.conn.id;
-    const user = users.get(userId);
+    const userId = roomSocket.conn.id,
+          user = users.get(userId);
 
     try {
       user.finishRoomConnection(roomSocket, self);

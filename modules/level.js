@@ -3,6 +3,7 @@ const Bomb = require("./bomb");
 //// const Pickup = require("./pickup");
 const Tile = require("./tile");
 
+
 const tileWidth = 80;
 const tileHeight = 80;
 
