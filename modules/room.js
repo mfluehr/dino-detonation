@@ -4,7 +4,7 @@ const Level = require("./level");
 
 const Room = (name = "New Room", lobby) => {
   const self = {
-    get id () { return roomId },
+    get id () { return id },
     get users () { return users; },
     get level () { return level; },
     get name () { return name; },
@@ -15,8 +15,8 @@ const Room = (name = "New Room", lobby) => {
   };
 
 
-  const roomId = "r" + Date.now() + Math.random(),
-        roomIo = lobby.io.of(`/${roomId}`),
+  const id = "r" + Date.now() + Math.random(),
+        clients = lobby.io.of(`/${id}`),
         roomOptions = RoomOptions(),
         users = new Map();
 
@@ -54,7 +54,7 @@ const Room = (name = "New Room", lobby) => {
 
     users.set(userId, newUser);
     newUser.lobbySocket.emit("joinRoom", {
-      roomId
+      id
     });
 
     return Promise.resolve(userId);
@@ -73,7 +73,7 @@ const Room = (name = "New Room", lobby) => {
       users.delete(userId);
 
       if (users.size === 0) {
-        lobby.deleteRoom(roomId);
+        lobby.deleteRoom(id);
       }
     }
   };
@@ -85,7 +85,7 @@ const Room = (name = "New Room", lobby) => {
 
 
 
-  roomIo.on("connection", function (roomSocket) {
+  clients.on("connection", function (roomSocket) {
     const userId = roomSocket.conn.id,
           user = users.get(userId);
 

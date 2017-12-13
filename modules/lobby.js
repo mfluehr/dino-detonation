@@ -4,7 +4,7 @@ const socket = require("socket.io");
 const Lobby = (server) => {
   const self = {
     get io () { return io; },
-    get lobbyIo () { return lobbyIo; },
+    get clients () { return clients; },
     get rooms () { return rooms; },
     get users () { return users; },
 
@@ -18,7 +18,7 @@ const Lobby = (server) => {
   const Room = require("./room"),
         User = require("./user"),
         io = socket(server),
-        lobbyIo = io.of("/lobby"),
+        clients = io.of("/lobby"),
         maxRooms = 5,
         maxUsers = 40,
         rooms = new Map(),
@@ -49,8 +49,8 @@ const Lobby = (server) => {
 
     const newRoom = Room(name, self);
     rooms.set(newRoom.id, newRoom);
-    lobbyIo.emit("addRoom", {
-      roomId: newRoom.id,
+    clients.emit("addRoom", {
+      id: newRoom.id,
       name: newRoom.name
     });
 
@@ -73,22 +73,16 @@ const Lobby = (server) => {
     //// TODO: send all data together?
     rooms.forEach((room, roomId) => {
       lobbySocket.emit("addRoom", {
-        roomId: room.id,
+        id: room.id,
         name: room.name
       });
     });
 
     users.forEach((user, userId) => {
-      lobbySocket.emit("addUser", {
-        userId: user.id,
-        name: user.name
-      });
+      lobbySocket.emit("addUser", user);
     });
 
-    lobbySocket.broadcast.emit("addUser", {
-      userId: newUser.id,
-      name: newUser.name
-    });
+    lobbySocket.broadcast.emit("addUser", newUser);
 
     return Promise.resolve(newUser.id);
   };
@@ -97,17 +91,14 @@ const Lobby = (server) => {
     rooms.delete(roomId);
   };
 
-  const deleteUser = (userId) => {
-    users.delete(userId);
-    lobbyIo.emit("deleteUser", { userId });
+  const deleteUser = (id) => {
+    users.delete(id);
+    clients.emit("deleteUser", { id });
   };
 
 
-  lobbyIo.on("connection", function (lobbySocket) {
+  clients.on("connection", function (lobbySocket) {
     addUser(lobbySocket)
-        .then((userId) => {
-          lobbySocket.emit("connectionMade", userId);
-        })
         .catch((err) => {
           lobbySocket.emit("connectionError", err);
           lobbySocket.disconnect();

@@ -4,27 +4,66 @@ const randomName = require("./random-name");
 
 const User = (lobbySocket, lobby) => {
   const self = {
-    get id () { return userId; },
-    get avatar () { return avatar; },
-    get email () { return email; },
-    get name () { return name; },
-    get room () { return room; },
-    get lobbySocket () { return lobbySocket; },
+    get props () { return props; },
+    // get avatar () { return avatar; },
+    // get lobbySocket () { return lobbySocket; },
+    // get room () { return room; },
 
     get finishRoomConnection () { return finishRoomConnection; }
   };
 
 
-  const userId = lobbySocket.conn.id,
-        avatar = Avatar(lobbySocket, self);
+  const avatar = Avatar(lobbySocket, self);
 
-  let email = "noreply@example.com",
-      name = randomName(),
-      room;
+  let room = {};
+
+
+
+
+  const props = {
+    id: lobbySocket.conn.id,
+    email: "noreply@example.com",
+    name: randomName(),
+
+    avatar,
+    // lobbySocket,
+    room
+  };
+
+  const locked = new Set(["id"]),
+        shared = new Set(["id", "name"]);
+
+  const p = new Proxy(props, {
+    get: function(obj, prop) {
+      return obj[prop];
+    },
+    set: function(obj, prop, val) {
+      if (locked.has(prop)) {
+        return false;
+      }
+      else if (obj[prop] !== val) {
+        obj[prop] = val;
+
+        if (shared.has(prop)) {
+          lobby.clients.emit("updateUser", { id: p.id, prop, val });
+        }
+        else {
+          lobbySocket.emit("updateUser", { id: p.id, prop, val });
+        }
+
+        return true;
+      }
+
+      return false;
+    }
+  });
+
+
+
 
 
   const dropBomb = () => {
-    //room.level.addBomb(userId);
+    //room.level.addBomb(id);
     console.log("Drop");
   };
 
@@ -42,7 +81,7 @@ const User = (lobbySocket, lobby) => {
     });
 
     roomSocket.on("disconnect", function (reason) {
-      room.deleteUser(userId);
+      room.deleteUser(id);
     });
   };
 
@@ -50,7 +89,7 @@ const User = (lobbySocket, lobby) => {
     const newRoom = lobby.rooms.get(roomId);
 
     if (newRoom) {
-      newRoom.addUser(userId)
+      newRoom.addUser(id)
           .then(() => {
             room = newRoom;
           })
@@ -69,7 +108,7 @@ const User = (lobbySocket, lobby) => {
         throw "The user must have a name.";
       }
 
-      lobby.users.forEach((user, userId) => {
+      lobby.users.forEach((user, id) => {
         if (user.name === data.name) {
           throw "A user with the specified name already exists.";
         }
@@ -79,9 +118,9 @@ const User = (lobbySocket, lobby) => {
       return Promise.reject(err);
     }
 
-    ({email, name} = {...{email, name}, ...data});
+    //// TODO: only allow for some properties
+    Object.assign(p, data);
 
-    lobby.lobbyIo.emit("editUser", { userId, name });
     return Promise.resolve();
   };
 
@@ -98,10 +137,10 @@ const User = (lobbySocket, lobby) => {
 
   lobbySocket.on("disconnect", function (reason) {
     if (room) {
-      room.deleteUser(userId);
+      //// room.deleteUser(p.id);
     }
 
-    lobby.deleteUser(userId);
+    lobby.deleteUser(p.id);
   });
 
   lobbySocket.on("joinRoom", function (roomId) {
@@ -110,7 +149,7 @@ const User = (lobbySocket, lobby) => {
 
   lobbySocket.on("leaveRoom", function () {
     if (room) {
-      room.deleteUser(userId);
+      room.deleteUser(id);
     }
     else {
       lobbySocket.emit("ioError", "The user isn't in a room.");
@@ -134,7 +173,7 @@ const User = (lobbySocket, lobby) => {
   });
 
 
-  return self;
+  return p;
 };
 
 module.exports = User;

@@ -1,12 +1,27 @@
 "use strict";
 
 
-// const User = () => {
-//   let userId,
-//         avatar;
-//
-//   let name = "";
-// };
+const User = (props) => {
+  const shared = new Set(["id", "name"]);
+
+  const p = new Proxy(props, {
+    get: function(obj, prop) {
+      return obj[prop];
+    },
+    set: function(obj, prop, val) {
+      obj[prop] = val;
+
+      if (shared.has(prop)) {
+        // lobbyIo.emit("updateUser", { id: p.id, prop, val });
+      }
+
+      return true;
+    }
+  });
+
+
+  return p;
+};
 
 
 
@@ -24,8 +39,7 @@ const Lobby = () => {
     roomList: document.getElementById("room-list")
   };
 
-  let userId,
-      room,
+  let room,
       user;
 
   const rooms = new Map(),
@@ -55,54 +69,45 @@ const Lobby = () => {
   };
 
 
-  const listRoom = ({ roomId, name }) => {
+  const listRoom = ({ id, name }) => {
     fields.roomList.insertAdjacentHTML("beforeend",
-        `<li id="r${roomId}">` +
-        `<a href="#" data-id="${roomId}">${name}</a>` +
+        `<li id="r${id}">` +
+        `<a href="#" data-id="${id}">${name}</a>` +
         `</li>`);
   };
 
-  const listUser = ({ userId, name }) => {
+  const listUser = ({ id, name }) => {
     fields.userList.insertAdjacentHTML("beforeend",
-        `<li id="u${userId}">` +
+        `<li id="u${id}">` +
         `${name}` +
         `</li>`);
   };
 
-  const relistRoom = ({ roomId, name }) => {
-    const el = document.getElementById(`u${roomId}`);
+  const relistRoom = ({ id, name }) => {
+    const el = document.getElementById(`u${id}`);
     el.innerText = name;
   };
 
-  const relistUser = ({ userId, name }) => {
-    const el = document.getElementById(`u${userId}`);
+  const relistUser = ({ id, name }) => {
+    const el = document.getElementById(`u${id}`);
     el.innerText = name;
   };
 
-  const unlistRoom = ({ roomId }) => {
+  const unlistRoom = ({ id }) => {
     ////
   };
 
-  const unlistUser = ({ userId }) => {
-    const li = document.getElementById(`u${userId}`);
+  const unlistUser = ({ id }) => {
+    const li = document.getElementById(`u${id}`);
     li.remove();
   };
 
 
-  lobbyIo.on("addRoom", (data) => listRoom(data));
-  lobbyIo.on("addUser", (data) => listUser(data));
-  lobbyIo.on("deleteRoom", (data) => unlistRoom(data));
-  lobbyIo.on("deleteUser", (data) => unlistUser(data));
-  lobbyIo.on("editUser", (data) => relistUser(data));
+  // lobbyIo.on("addRoom", (data) => listRoom(data));
+  // lobbyIo.on("deleteRoom", (data) => unlistRoom(data));
 
   lobbyIo.on("connectionError", (err) => {
     console.warn(err);
-  });
-
-  lobbyIo.on("connectionMade", (newUserId) => {
-    userId = newUserId;
-
-    console.log("Connected to server.");
   });
 
   lobbyIo.on("disconnect", (reason) => {
@@ -121,11 +126,35 @@ const Lobby = () => {
     console.warn(err);
   });
 
-  lobbyIo.on("joinRoom", ({ roomId }) => {
-    room = Room(roomId);
+  lobbyIo.on("joinRoom", ({ id }) => {
+    room = Room(id);
 
-    console.log("You have entered", roomId);
+    console.log("You have entered", id);
   });
+
+
+
+  lobbyIo.on("addUser", (props) => {
+    const user = User(props);
+    users.set(user.id, user);
+    listUser(user);
+  });
+
+  lobbyIo.on("deleteUser", (id) => {
+    users.delete(id);
+    unlistUser(id);
+  });
+
+  lobbyIo.on("updateUser", ({ id, prop, val }) => {
+    const user = users.get(id)
+    user[prop] = val;
+    relistUser(user);
+  });
+
+
+
+
+
 
 
   fields.createRoom.addEventListener("click", (e) => {
