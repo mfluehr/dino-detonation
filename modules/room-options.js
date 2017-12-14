@@ -1,6 +1,9 @@
 "use strict";
 
+
 const RoomOptions = () => {
+  // let maxUsers = 4;
+
   const levels = {
     name: "testLevel",
     timer: 300
@@ -26,6 +29,7 @@ const RoomOptions = () => {
   };
 
   return {
+    // maxUsers,
     levels,
     avatars,
     bombs,

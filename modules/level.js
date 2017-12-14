@@ -1,9 +1,9 @@
 "use strict";
 
-const Util = require("./util");
-const Bomb = require("./bomb");
-//// const Pickup = require("./pickup");
-const Tile = require("./tile");
+const Util = require("./util"),
+      Bomb = require("./bomb"),
+      //// Pickup = require("./pickup"),
+      Tile = require("./tile");
 
 
 const tileWidth = 80;
@@ -40,7 +40,7 @@ const Level = ({
   name,
   room
 }) => {
-  const self = {
+  const p = {
     get reset () { return reset; },
     get addBomb () { return addBomb; },
     get addUser () { return resetUser; },
@@ -63,7 +63,7 @@ const Level = ({
     y = tileY(y);
 
     bomb = Bomb({
-      level: self,
+      level: p,
       x, y,
       userId
     });
@@ -135,7 +135,7 @@ const Level = ({
   };
 
 
-  return self;
+  return p;
 };
 
 module.exports = Level;

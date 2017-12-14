@@ -5,10 +5,10 @@ const LobbyRoom = (properties) => {
   const shared = new Set(["id", "name"]);
 
   const p = new Proxy(properties, {
-    get: function(obj, prop) {
+    get: (obj, prop) => {
       return obj[prop];
     },
-    set: function(obj, prop, val) {
+    set: (obj, prop, val) => {
       obj[prop] = val;
 
       if (shared.has(prop)) {
@@ -101,7 +101,7 @@ const Lobby = () => {
     el.innerText = name;
   };
 
-  const unlistRoom = ({ id }) => {
+  const unlistRoom = (id) => {
     const li = document.getElementById(`r${id}`);
     li.remove();
   };
@@ -119,7 +119,7 @@ const Lobby = () => {
     el.innerText = name;
   };
 
-  const unlistUser = ({ id }) => {
+  const unlistUser = (id) => {
     const li = document.getElementById(`u${id}`);
     li.remove();
   };

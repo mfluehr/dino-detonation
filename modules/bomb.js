@@ -1,5 +1,6 @@
 "use strict";
 
+
 const Bomb = ({
   level,
   x, y,

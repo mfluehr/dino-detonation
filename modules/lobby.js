@@ -1,10 +1,12 @@
 "use strict";
 
-const socket = require("socket.io");
+const socket = require("socket.io"),
+      Room = require("./room"),
+      User = require("./user");
 
 
 const Lobby = (server) => {
-  const self = {
+  const p = {
     get io () { return io; },
     get clients () { return clients; },
     get rooms () { return rooms; },
@@ -16,19 +18,40 @@ const Lobby = (server) => {
     get deleteUser () { return deleteUser; }
   };
 
-
-  const Room = require("./room"),
-        User = require("./user"),
-        io = socket(server),
+  const io = socket(server),
         clients = io.of("/lobby"),
         maxRooms = 5,
         maxUsers = 40,
         rooms = new Map(),
         users = new Map();
 
+  rooms.set = (...args) => {
+    clients.emit("addRoom", args[1].shared);
+    return Map.prototype.set.apply(rooms, args);
+  };
 
-  const addRoom = (name = "", user) => {
-    if (user.room) {
+  rooms.delete = (...args) => {
+    clients.emit("deleteRoom", args[1].id);
+    return Map.prototype.delete.apply(rooms, args);
+  };
+
+  users.set = (...args) => {
+    clients.emit("addUser", args[1].shared);
+    return Map.prototype.set.apply(users, args);
+  };
+
+  users.delete = (...args) => {
+    clients.emit("deleteUser", args[0]);
+    return Map.prototype.delete.apply(users, args);
+  };
+
+
+
+
+
+
+  const addRoom = (name = "", owner) => {
+    if (owner.room) {
       throw "The user can't create a room while in another room.";
     }
     else if (rooms.size >= maxRooms) {
@@ -44,14 +67,11 @@ const Lobby = (server) => {
       }
     })
 
-    const newRoom = Room(name, self);
-    rooms.set(newRoom.id, newRoom);
-    clients.emit("addRoom", {
-      id: newRoom.id,
-      name: newRoom.name
-    });
+    const newRoom = Room(name, p, owner);
 
-    return newRoom.id;
+    rooms.set(newRoom.id, newRoom);
+
+    return newRoom;
   };
 
   const addUser = (lobbySocket) => {
@@ -59,7 +79,7 @@ const Lobby = (server) => {
       throw "The server can't hold any more users.";
     }
 
-    const newUser = User(lobbySocket, self);
+    const newUser = User(lobbySocket, p);
     users.set(newUser.id, newUser);
 
     //// TODO: send all data together?
@@ -71,10 +91,9 @@ const Lobby = (server) => {
     });
 
     users.forEach((user, userId) => {
+      //// TODO: don't repeat user's self
       lobbySocket.emit("addUser", user);
     });
-
-    lobbySocket.broadcast.emit("addUser", newUser);
   };
 
   const deleteRoom = (roomId) => {
@@ -83,7 +102,6 @@ const Lobby = (server) => {
 
   const deleteUser = (id) => {
     users.delete(id);
-    clients.emit("deleteUser", { id });
   };
 
 
@@ -99,7 +117,7 @@ const Lobby = (server) => {
   });
 
 
-  return self;
+  return p;
 };
 
 

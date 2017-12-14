@@ -1,5 +1,6 @@
 "use strict";
 
+
 const types = {
   bonus: [
     "boostCapacity",
