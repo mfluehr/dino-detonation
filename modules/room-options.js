@@ -1,3 +1,5 @@
+"use strict";
+
 const RoomOptions = () => {
   const levels = {
     name: "testLevel",

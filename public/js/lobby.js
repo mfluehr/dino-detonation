@@ -1,7 +1,29 @@
 "use strict";
 
 
-const User = (props) => {
+const LobbyRoom = (properties) => {
+  const shared = new Set(["id", "name"]);
+
+  const p = new Proxy(properties, {
+    get: function(obj, prop) {
+      return obj[prop];
+    },
+    set: function(obj, prop, val) {
+      obj[prop] = val;
+
+      if (shared.has(prop)) {
+        // lobbyIo.emit("updateUser", { id: p.id, prop, val });
+      }
+
+      return true;
+    }
+  });
+
+
+  return p;
+};
+
+const LobbyUser = (props) => {
   const shared = new Set(["id", "name"]);
 
   const p = new Proxy(props, {
@@ -61,11 +83,9 @@ const Lobby = () => {
   };
 
   const login = () => {
-    const info = {
-      name: fields.userName.value
-    };
+    const name = fields.userName.value;
 
-    lobbyIo.emit("login", info);
+    lobbyIo.emit("login", name);
   };
 
 
@@ -76,6 +96,17 @@ const Lobby = () => {
         `</li>`);
   };
 
+  const relistRoom = ({ id, name }) => {
+    const el = document.getElementById(`r${id}`);
+    el.innerText = name;
+  };
+
+  const unlistRoom = ({ id }) => {
+    const li = document.getElementById(`r${id}`);
+    li.remove();
+  };
+
+
   const listUser = ({ id, name }) => {
     fields.userList.insertAdjacentHTML("beforeend",
         `<li id="u${id}">` +
@@ -83,18 +114,9 @@ const Lobby = () => {
         `</li>`);
   };
 
-  const relistRoom = ({ id, name }) => {
-    const el = document.getElementById(`u${id}`);
-    el.innerText = name;
-  };
-
   const relistUser = ({ id, name }) => {
     const el = document.getElementById(`u${id}`);
     el.innerText = name;
-  };
-
-  const unlistRoom = ({ id }) => {
-    ////
   };
 
   const unlistUser = ({ id }) => {
@@ -103,14 +125,13 @@ const Lobby = () => {
   };
 
 
-  // lobbyIo.on("addRoom", (data) => listRoom(data));
-  // lobbyIo.on("deleteRoom", (data) => unlistRoom(data));
 
   lobbyIo.on("connectionError", (err) => {
     console.warn(err);
   });
 
   lobbyIo.on("disconnect", (reason) => {
+    //// TODO: use proxy instead?
     while (fields.roomList.firstChild) {
       fields.roomList.removeChild(fields.roomList.firstChild);
     }
@@ -126,16 +147,27 @@ const Lobby = () => {
     console.warn(err);
   });
 
-  lobbyIo.on("joinRoom", ({ id }) => {
-    room = Room(id);
 
-    console.log("You have entered", id);
+  lobbyIo.on("addRoom", (props) => {
+    const room = LobbyRoom(props);
+    rooms.set(room.id, room);
+    listRoom(room);
+  });
+
+  lobbyIo.on("deleteRoom", (id) => {
+    rooms.delete(id);
+    unlistRoom(id);
+  });
+
+  lobbyIo.on("joinRoom", (id) => {
+    room = rooms.get(id);
+
+    console.log("You have entered", room.name);
   });
 
 
-
   lobbyIo.on("addUser", (props) => {
-    const user = User(props);
+    const user = LobbyUser(props);
     users.set(user.id, user);
     listUser(user);
   });

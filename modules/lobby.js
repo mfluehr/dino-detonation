@@ -1,3 +1,5 @@
+"use strict";
+
 const socket = require("socket.io");
 
 
@@ -26,26 +28,21 @@ const Lobby = (server) => {
 
 
   const addRoom = (name = "", user) => {
-    try {
-      if (user.room) {
-        throw "The user can't create a room while in another room.";
-      }
-      else if (rooms.size >= maxRooms) {
-        throw "The server can't hold any more rooms.";
-      }
-      else if (name.length === 0) {
-        throw "The room must have a name.";
-      }
+    if (user.room) {
+      throw "The user can't create a room while in another room.";
+    }
+    else if (rooms.size >= maxRooms) {
+      throw "The server can't hold any more rooms.";
+    }
+    else if (name.length === 0) {
+      throw "The room must have a name.";
+    }
 
-      rooms.forEach((room, roomId) => {
-        if (room.name === name) {
-          throw "A room with the specified name already exists.";
-        }
-      })
-    }
-    catch (err) {
-      return Promise.reject(err);
-    }
+    rooms.forEach((room, roomId) => {
+      if (room.name === name) {
+        throw "A room with the specified name already exists.";
+      }
+    })
 
     const newRoom = Room(name, self);
     rooms.set(newRoom.id, newRoom);
@@ -54,17 +51,12 @@ const Lobby = (server) => {
       name: newRoom.name
     });
 
-    return Promise.resolve(newRoom.id);
+    return newRoom.id;
   };
 
   const addUser = (lobbySocket) => {
-    try {
-      if (users.size >= maxUsers) {
-        throw "The server can't hold any more users.";
-      }
-    }
-    catch (err) {
-      return Promise.reject(err);
+    if (users.size >= maxUsers) {
+      throw "The server can't hold any more users.";
     }
 
     const newUser = User(lobbySocket, self);
@@ -83,8 +75,6 @@ const Lobby = (server) => {
     });
 
     lobbySocket.broadcast.emit("addUser", newUser);
-
-    return Promise.resolve(newUser.id);
   };
 
   const deleteRoom = (roomId) => {
@@ -98,11 +88,14 @@ const Lobby = (server) => {
 
 
   clients.on("connection", function (lobbySocket) {
-    addUser(lobbySocket)
-        .catch((err) => {
-          lobbySocket.emit("connectionError", err);
-          lobbySocket.disconnect();
-        });
+    try {
+      addUser(lobbySocket);
+    }
+    catch (err) {
+      console.warn(err);
+      lobbySocket.emit("ioError", err);
+      lobbySocket.disconnect();
+    }
   });
 
 

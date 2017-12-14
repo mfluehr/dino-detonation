@@ -1,3 +1,5 @@
+"use strict";
+
 const Util = require("./util");
 const Bomb = require("./bomb");
 //// const Pickup = require("./pickup");

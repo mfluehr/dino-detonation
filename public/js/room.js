@@ -1,5 +1,6 @@
 "use strict";
 
+
 const Room = (roomId) => {
   const roomIo = io.connect(`${url}/${roomId}`);
 
@@ -46,10 +47,6 @@ const Room = (roomId) => {
 
   roomIo.on("addUser", () => {
     ////
-  });
-
-  roomIo.on("connectionError", (err) => {
-    console.warn(err);
   });
 
   roomIo.on("deleteUser", (userId) => {

@@ -8,7 +8,7 @@ const express = require("express");
 
 const app = express();
 const server = app.listen(process.env.PORT || 4000, () => {
-  console.log("Server listening for requests");
+  console.log("Server listening for requests.");
 });
 
 // View templating

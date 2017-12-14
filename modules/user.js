@@ -1,47 +1,30 @@
+"use strict";
+
+const Validator = require("validator");
 const Avatar = require("./avatar");
+const Util = require("./util");
 const randomName = require("./random-name");
 
 
 const User = (lobbySocket, lobby) => {
-  const self = {
-    get props () { return props; },
-    // get avatar () { return avatar; },
-    // get lobbySocket () { return lobbySocket; },
-    // get room () { return room; },
+  const properties = {
+    id: lobbySocket.conn.id,
+    avatar: undefined,
+    email: "noreply@example.com",
+    name: randomName(),
+    room: undefined,
 
     get finishRoomConnection () { return finishRoomConnection; }
   };
 
+  const shared = new Set(["id", "name"]);
 
-  const avatar = Avatar(lobbySocket, self);
-
-  let room = {};
-
-
-
-
-  const props = {
-    id: lobbySocket.conn.id,
-    email: "noreply@example.com",
-    name: randomName(),
-
-    avatar,
-    // lobbySocket,
-    room
-  };
-
-  const locked = new Set(["id"]),
-        shared = new Set(["id", "name"]);
-
-  const p = new Proxy(props, {
+  const p = new Proxy(properties, {
     get: function(obj, prop) {
       return obj[prop];
     },
     set: function(obj, prop, val) {
-      if (locked.has(prop)) {
-        return false;
-      }
-      else if (obj[prop] !== val) {
+      if (obj[prop] !== val) {
         obj[prop] = val;
 
         if (shared.has(prop)) {
@@ -50,16 +33,15 @@ const User = (lobbySocket, lobby) => {
         else {
           lobbySocket.emit("updateUser", { id: p.id, prop, val });
         }
-
-        return true;
       }
 
-      return false;
+      return true;
     }
   });
 
+  properties.avatar = Avatar(lobbySocket, p);
 
-
+  Util.freezeProperties(properties, ["id", "avatar"]);
 
 
   const dropBomb = () => {
@@ -71,7 +53,7 @@ const User = (lobbySocket, lobby) => {
     // console.log("Halt!");
   };
 
-  const finishRoomConnection = (roomSocket, room) => {
+  const finishRoomConnection = (roomSocket) => {
     roomSocket.on("dropBomb", function () {
       dropBomb();
     });
@@ -81,7 +63,7 @@ const User = (lobbySocket, lobby) => {
     });
 
     roomSocket.on("disconnect", function (reason) {
-      room.deleteUser(id);
+      p.room.deleteUser(p.id);
     });
   };
 
@@ -89,55 +71,51 @@ const User = (lobbySocket, lobby) => {
     const newRoom = lobby.rooms.get(roomId);
 
     if (newRoom) {
-      newRoom.addUser(id)
-          .then(() => {
-            room = newRoom;
-          })
-          .catch((err) => {
-            lobbySocket.emit("ioError", err);
-          });
+      try {
+        newRoom.addUser(p.id);
+      }
+      catch (err) {
+        console.warn(err);
+        lobbySocket.emit("ioError", err);
+      }
+
+      p.room = newRoom;
+      //// lobbySocket.emit("joinRoom", p.room.id);
     }
     else {
       lobbySocket.emit("ioError", "The specified room doesn't exist.");
     }
   };
 
-  const login = (data) => {
-    try {
-      if (!data.name) {
-        throw "The user must have a name.";
+  const login = (name) => {
+    if (!name) {
+      throw "The user must have a name.";
+    }
+
+    lobby.users.forEach((user, id) => {
+      if (p.name === name) {
+        throw "A user with the specified name already exists.";
       }
+    })
 
-      lobby.users.forEach((user, id) => {
-        if (user.name === data.name) {
-          throw "A user with the specified name already exists.";
-        }
-      })
-    }
-    catch (err) {
-      return Promise.reject(err);
-    }
-
-    //// TODO: only allow for some properties
-    Object.assign(p, data);
-
-    return Promise.resolve();
+    p.name = name;
   };
 
 
   lobbySocket.on("addRoom", function (name) {
-    lobby.addRoom(name, self)
-        .then((roomId) => {
-          joinRoom(roomId);
-        })
-        .catch((err) => {
-          lobbySocket.emit("ioError", err);
-        });
+    try {
+      const roomId = lobby.addRoom(name, p);
+      joinRoom(roomId);
+    }
+    catch (err) {
+      console.warn(err);
+      lobbySocket.emit("ioError", err);
+    }
   });
 
   lobbySocket.on("disconnect", function (reason) {
-    if (room) {
-      //// room.deleteUser(p.id);
+    if (p.room) {
+      //// p.room.deleteUser(p.id);
     }
 
     lobby.deleteUser(p.id);
@@ -148,24 +126,30 @@ const User = (lobbySocket, lobby) => {
   });
 
   lobbySocket.on("leaveRoom", function () {
-    if (room) {
-      room.deleteUser(id);
+    if (p.room) {
+      p.room.deleteUser(id);
     }
     else {
       lobbySocket.emit("ioError", "The user isn't in a room.");
     }
   });
 
-  lobbySocket.on("login", function (data) {
-    login(data)
-        .catch((err) => {
-          lobbySocket.emit("ioError", err);
-        });
+  lobbySocket.on("login", function (newName) {
+    newName = newName + "";
+    newName = Validator.whitelist(newName.substr(0, 20), /\w/)
+
+    try {
+      login(newName)
+    }
+    catch (err) {
+      console.warn(err);
+      lobbySocket.emit("ioError", err);
+    }
   });
 
   lobbySocket.on("startGame", function () {
-    if (room) {
-      room.startGame();
+    if (p.room) {
+      p.room.startGame();
     }
     else {
       lobbySocket.emit("ioError", "The user isn't in a room.");

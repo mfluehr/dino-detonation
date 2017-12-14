@@ -1,5 +1,7 @@
-const RoomOptions = require("./room-options");
+"use strict";
+
 const Level = require("./level");
+const RoomOptions = require("./room-options");
 
 
 const Room = (name = "New Room", lobby) => {
@@ -32,19 +34,14 @@ const Room = (name = "New Room", lobby) => {
   const addUser = (userId) => {
     const newUser = lobby.users.get(userId);
 
-    try {
-      if (users.get(userId)) {
-        throw "The user is already in the specified room.";
-      }
-      else if (newUser.room) {
-        throw "The user is already in another room.";
-      }
-      else if (users.size >= maxUsers) {
-        throw "The specified room is already full.";
-      }
+    if (users.get(userId)) {
+      throw "The user is already in the specified room.";
     }
-    catch (err) {
-      return Promise.reject(err);
+    else if (newUser.room) {
+      throw "The user is already in another room.";
+    }
+    else if (users.size >= maxUsers) {
+      throw "The specified room is already full.";
     }
 
     if (level) {
@@ -53,11 +50,6 @@ const Room = (name = "New Room", lobby) => {
     }
 
     users.set(userId, newUser);
-    newUser.lobbySocket.emit("joinRoom", {
-      id
-    });
-
-    return Promise.resolve(userId);
   };
 
   const deleteUser = (userId) => {
@@ -90,11 +82,10 @@ const Room = (name = "New Room", lobby) => {
           user = users.get(userId);
 
     try {
-      user.finishRoomConnection(roomSocket, self);
+      user.finishRoomConnection(roomSocket);
     }
     catch (err) {
-      roomSocket.emit("connectionError",
-          "Connection to room failed.");
+      roomSocket.emit("ioError", "Connection to room failed.");
       roomSocket.disconnect();
     }
   });

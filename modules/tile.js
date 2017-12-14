@@ -1,3 +1,5 @@
+"use strict";
+
 const TileType = ({
   defusesBombs = false,
   explodes = true,

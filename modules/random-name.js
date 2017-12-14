@@ -1,3 +1,5 @@
+"use strict";
+
 const fs = require("fs");
 
 
@@ -14,7 +16,7 @@ fs.readFile("data/last-names.txt", (err, data) => {
 
 
 const randomName = () => {
-  const first = firstNames[Math.floor(Math.random() * firstNames.length)];
+  const first = firstNames[Math.floor(Math.random() * firstNames.length)],
         last = lastNames[Math.floor(Math.random() * lastNames.length)];
 
   return first + " " + last;

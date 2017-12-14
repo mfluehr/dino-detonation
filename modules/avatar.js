@@ -1,3 +1,5 @@
+"use strict";
+
 const Util = require("./util");
 
 
@@ -83,6 +85,7 @@ const Avatar = (socket, user) => {
   });
 
   socket.on("move", function (angle) {
+    // TODO: sanitize angle
     move(angle);
   });
 
