@@ -71,20 +71,20 @@ const Avatar = (socket, user) => {
   const quit = () => {};
 
 
-  socket.on("dropBomb", function () {
+  socket.on("dropBomb", () => {
     dropBomb();
     ////this.broadcast("dropBomb");
   });
 
-  socket.on("explodeAllBombs", function () {
+  socket.on("explodeAllBombs", () => {
     explodeAllBombs();
   });
 
-  socket.on("halt", function () {
+  socket.on("halt", () => {
     halt();
   });
 
-  socket.on("move", function (angle) {
+  socket.on("move", (angle) => {
     // TODO: sanitize angle
     move(angle);
   });

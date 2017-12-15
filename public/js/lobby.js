@@ -36,23 +36,23 @@ const LobbyUser = (properties, lobbyIo) => {
   const p = new Proxy(properties, {
     get: (obj, prop) => {
       if (prop === "el") {
-        return document.getElementById(`u${p.id}`);
+        return document.getElementById(`${p.id}`);
       }
 
       return obj[prop];
     },
     set: (obj, prop, val) => {
-      if (p.receiving || editable.has(prop)) {
+      if (p.receiving) {
         obj[prop] = val;
 
         if (displayed.has(prop)) {
           p.el.querySelector(`.${prop}`).innerText = val;
         }
 
-        if (!p.receiving) {
-          lobbyIo.emit("updateUser", { id: p.id, prop, val });
-        }
-
+        return true;
+      }
+      else if (editable.has(prop)) {
+        lobbyIo.emit("updateUser", { prop, val });
         return true;
       }
 
@@ -103,40 +103,37 @@ const Lobby = () => {
     lobbyIo.emit("leaveRoom");
   };
 
-  const login = () => {
-    p.user.name = fields.userName.value;
-  };
-
-
   const listRoom = ({ id, name, numUsers, maxUsers }) => {
     fields.roomList.insertAdjacentHTML("beforeend",
-        `<tr id="r${id}">` +
-          `<td><a class="name" href="#">${name}</a></td>` +
+        `<tr id="${id}">` +
+          `<td><a class="name" href="#" data-id="${id}">${name}</a></td>` +
           `<td>` +
             `<span class="numUsers">${numUsers}</span> / ` +
             `<span class="maxUsers">${maxUsers}</span>` +
           `</td>` +
-        `</tr>`
-      );
+        `</tr>`);
   };
 
   const listUser = ({ id, name }) => {
     fields.userList.insertAdjacentHTML("beforeend",
-        `<li id="u${id}">` +
+        `<li id="${id}">` +
           `<span class="name">${name}</span>` +
         `</li>`);
   };
 
+  const login = () => {
+    p.user.name = fields.userName.value;
+  };
+
   const unlistRoom = (id) => {
-    const li = document.getElementById(`r${id}`);
+    const li = document.getElementById(`${id}`);
     li.remove();
   };
 
   const unlistUser = (id) => {
-    const li = document.getElementById(`u${id}`);
+    const li = document.getElementById(`${id}`);
     li.remove();
   };
-
 
 
   lobbyIo.on("connectionSuccess", (id) => {
@@ -144,6 +141,8 @@ const Lobby = () => {
   });
 
   lobbyIo.on("disconnect", (reason) => {
+    lobbyIo.off();
+
     //// TODO: use proxy instead?
     while (fields.roomList.firstChild) {
       fields.roomList.removeChild(fields.roomList.firstChild);
@@ -200,6 +199,9 @@ const Lobby = () => {
       p.users.get(data.id).receive(data);
     });
   });
+
+
+
 
 
 

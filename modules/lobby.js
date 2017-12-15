@@ -104,7 +104,7 @@ const Lobby = (server) => {
   };
 
 
-  clients.on("connection", function (lobbySocket) {
+  clients.on("connection", (lobbySocket) => {
     try {
       addUser(lobbySocket);
     }

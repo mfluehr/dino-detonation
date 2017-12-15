@@ -92,7 +92,7 @@ const Room = (name = "New Room", lobby, owner) => {
   };
 
 
-  clients.on("connection", function (roomSocket) {
+  clients.on("connection", (roomSocket) => {
     const userId = roomSocket.conn.id,
           user = users.get(userId);
 
