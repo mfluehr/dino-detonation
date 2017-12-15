@@ -13,6 +13,12 @@ a {
   color: #de3;
 }
 
+th,
+td {
+  min-width: 10em;
+  text-align: left;
+}
+
 
 .row {
   display: flex;

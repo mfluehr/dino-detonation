@@ -1,46 +1,64 @@
 "use strict";
 
 
-const LobbyRoom = (properties) => {
-  const shared = new Set(["id", "name"]);
+const LobbyRoom = (properties, lobbyIo) => {
+  const editable = new Set(["name"]);
 
   const p = new Proxy(properties, {
     get: (obj, prop) => {
       return obj[prop];
     },
     set: (obj, prop, val) => {
-      obj[prop] = val;
+      if (editable.has(prop)) {
+        obj[prop] = val;
+        lobbyIo.emit("updateRoom", { prop, val });
 
-      if (shared.has(prop)) {
-        // lobbyIo.emit("updateUser", { id: p.id, prop, val });
+        return true;
       }
 
-      return true;
+      return false;
     }
   });
-
 
   return p;
 };
 
-const LobbyUser = (props) => {
-  const shared = new Set(["id", "name"]);
+const LobbyUser = (properties, lobbyIo) => {
+  const editable = new Set(["email", "name"]);
+  const displayed = new Set(["name"]);
 
-  const p = new Proxy(props, {
-    get: function(obj, prop) {
-      return obj[prop];
-    },
-    set: function(obj, prop, val) {
-      obj[prop] = val;
+  properties.receive = (data) => {
+    properties.receiving = true;
+    Object.assign(p, data);
+    properties.receiving = false;
+  };
 
-      if (shared.has(prop)) {
-        // lobbyIo.emit("updateUser", { id: p.id, prop, val });
+  const p = new Proxy(properties, {
+    get: (obj, prop) => {
+      if (prop === "el") {
+        return document.getElementById(`u${p.id}`);
       }
 
-      return true;
+      return obj[prop];
+    },
+    set: (obj, prop, val) => {
+      if (p.receiving || editable.has(prop)) {
+        obj[prop] = val;
+
+        if (displayed.has(prop)) {
+          p.el.querySelector(`.${prop}`).innerText = val;
+        }
+
+        if (!p.receiving) {
+          lobbyIo.emit("updateUser", { id: p.id, prop, val });
+        }
+
+        return true;
+      }
+
+      return false;
     }
   });
-
 
   return p;
 };
@@ -52,6 +70,16 @@ const LobbyUser = (props) => {
 const Lobby = () => {
   const lobbyIo = io.connect(`${url}/lobby`);
 
+  const p = {
+    rooms: new Map(),
+    users: new Map(),
+    user: undefined,
+
+    get addRoom () { return addRoom; },
+    get joinRoom () { return joinRoom; },
+    get leaveRoom () { return leaveRoom; }
+  };
+
   const fields = {
     createRoom: document.getElementById("create-room"),
     login: document.getElementById("login"),
@@ -61,16 +89,9 @@ const Lobby = () => {
     roomList: document.getElementById("room-list")
   };
 
-  let room,
-      user;
-
-  const rooms = new Map(),
-        users = new Map();
-
 
   const addRoom = () => {
     const name = fields.roomName.value;
-
     lobbyIo.emit("addRoom", name);
   };
 
@@ -83,40 +104,32 @@ const Lobby = () => {
   };
 
   const login = () => {
-    const name = fields.userName.value;
-
-    lobbyIo.emit("login", name);
+    p.user.name = fields.userName.value;
   };
 
 
-  const listRoom = ({ id, name }) => {
+  const listRoom = ({ id, name, numUsers, maxUsers }) => {
     fields.roomList.insertAdjacentHTML("beforeend",
-        `<li id="r${id}">` +
-        `<a href="#" data-id="${id}">${name}</a>` +
-        `</li>`);
+        `<tr id="r${id}">` +
+          `<td><a class="name" href="#">${name}</a></td>` +
+          `<td>` +
+            `<span class="numUsers">${numUsers}</span> / ` +
+            `<span class="maxUsers">${maxUsers}</span>` +
+          `</td>` +
+        `</tr>`
+      );
   };
 
-  const relistRoom = ({ id, name }) => {
-    const el = document.getElementById(`r${id}`);
-    el.innerText = name;
+  const listUser = ({ id, name }) => {
+    fields.userList.insertAdjacentHTML("beforeend",
+        `<li id="u${id}">` +
+          `<span class="name">${name}</span>` +
+        `</li>`);
   };
 
   const unlistRoom = (id) => {
     const li = document.getElementById(`r${id}`);
     li.remove();
-  };
-
-
-  const listUser = ({ id, name }) => {
-    fields.userList.insertAdjacentHTML("beforeend",
-        `<li id="u${id}">` +
-        `${name}` +
-        `</li>`);
-  };
-
-  const relistUser = ({ id, name }) => {
-    const el = document.getElementById(`u${id}`);
-    el.innerText = name;
   };
 
   const unlistUser = (id) => {
@@ -126,8 +139,8 @@ const Lobby = () => {
 
 
 
-  lobbyIo.on("connectionError", (err) => {
-    console.warn(err);
+  lobbyIo.on("connectionSuccess", (id) => {
+    p.user = p.users.get(id);
   });
 
   lobbyIo.on("disconnect", (reason) => {
@@ -140,6 +153,9 @@ const Lobby = () => {
       fields.userList.removeChild(fields.userList.firstChild);
     }
 
+    p.rooms.clear();
+    p.users.clear();
+
     console.log("Server connection lost!");
   });
 
@@ -148,39 +164,41 @@ const Lobby = () => {
   });
 
 
-  lobbyIo.on("addRoom", (props) => {
-    const room = LobbyRoom(props);
-    rooms.set(room.id, room);
-    listRoom(room);
+  lobbyIo.on("addRoom", (...rooms) => {
+    rooms.forEach((data)  => {
+      const room = LobbyRoom(data, lobbyIo);
+      p.rooms.set(room.id, room);
+      listRoom(room);
+    });
   });
 
-  lobbyIo.on("deleteRoom", (id) => {
-    rooms.delete(id);
-    unlistRoom(id);
-  });
-
-  lobbyIo.on("joinRoom", (id) => {
-    room = rooms.get(id);
-
-    console.log("You have entered", room.name);
+  lobbyIo.on("deleteRoom", (...ids) => {
+    ids.forEach((id)  => {
+      p.rooms.delete(id);
+      unlistRoom(id);
+    });
   });
 
 
-  lobbyIo.on("addUser", (props) => {
-    const user = LobbyUser(props);
-    users.set(user.id, user);
-    listUser(user);
+  lobbyIo.on("addUser", (...users) => {
+    users.forEach((data) => {
+      const user = LobbyUser(data, lobbyIo);
+      p.users.set(user.id, user);
+      listUser(user);
+    });
   });
 
-  lobbyIo.on("deleteUser", (id) => {
-    users.delete(id);
-    unlistUser(id);
+  lobbyIo.on("deleteUser", (...ids) => {
+    ids.forEach((id)  => {
+      p.users.delete(id);
+      unlistUser(id);
+    });
   });
 
-  lobbyIo.on("updateUser", ({ id, prop, val }) => {
-    const user = users.get(id)
-    user[prop] = val;
-    relistUser(user);
+  lobbyIo.on("updateUser", (...users) => {
+    users.forEach((data) => {
+      p.users.get(data.id).receive(data);
+    });
   });
 
 
@@ -204,9 +222,5 @@ const Lobby = () => {
   });
 
 
-  return {
-    addRoom,
-    joinRoom,
-    leaveRoom
-  };
+  return p;
 };

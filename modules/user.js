@@ -20,11 +20,18 @@ const User = (lobbySocket, lobby) => {
 
   Object.seal(properties);
   Util.freezeProperties(properties, ["id"]);
-  const secret = new Set(["email"]);
+  const secret = new Set(["email"]),
+        shared = new Set(["id", "name"]);
 
   const p = new Proxy(properties, {
     get: (obj, prop) => {
-      if (prop === "shared") {
+      if (prop == "secret") {
+        return {
+          id: p.id,
+          email: p.email
+        };
+      }
+      else if (prop === "shared") {
         return {
           id: p.id,
           name: p.name
@@ -37,11 +44,14 @@ const User = (lobbySocket, lobby) => {
       if (obj[prop] !== val) {
         obj[prop] = val;
 
+        const data = { id: p.id };
+        data[prop] = val;
+
         if (secret.has(prop)) {
-          lobbySocket.emit("updateUser", { id: p.id, prop, val });
+          lobbySocket.emit("updateUser", data);
         }
-        else {
-          lobby.clients.emit("updateUser", { id: p.id, prop, val });
+        else if (shared.has(prop)) {
+          lobby.clients.emit("updateUser", data);
         }
       }
 
@@ -169,6 +179,12 @@ const User = (lobbySocket, lobby) => {
     else {
       lobbySocket.emit("ioError", "The user isn't in a room.");
     }
+  });
+
+  lobbySocket.on("updateUser", function ({ prop, val }) {
+    //// TODO: sanitize, and apply only if editable
+
+    p[prop] = val;
   });
 
 

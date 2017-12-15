@@ -13,6 +13,7 @@ const Room = (name = "New Room", lobby, owner) => {
 
     get addUser () { return addUser; },
     get deleteUser () { return deleteUser; },
+    get numUsers () { return users.size; },
     get startGame () { return startGame; }
   };
 
@@ -25,6 +26,7 @@ const Room = (name = "New Room", lobby, owner) => {
         return {
           id: p.id,
           maxUsers: p.maxUsers,
+          numUsers: p.numUsers,
           name: p.name
         };
       }
@@ -72,8 +74,6 @@ const Room = (name = "New Room", lobby, owner) => {
     const user = lobby.users.get(userId);
 
     if (user) {
-      // user.lobbySocket.broadcast.emit("deleteUser", userId);
-
       if (p.level) {
         p.level.deleteUser(user);
       }

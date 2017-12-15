@@ -31,7 +31,7 @@ const Lobby = (server) => {
   };
 
   rooms.delete = (...args) => {
-    clients.emit("deleteRoom", args[1].id);
+    clients.emit("deleteRoom", args[0]);
     return Map.prototype.delete.apply(rooms, args);
   };
 
@@ -44,10 +44,6 @@ const Lobby = (server) => {
     clients.emit("deleteUser", args[0]);
     return Map.prototype.delete.apply(users, args);
   };
-
-
-
-
 
 
   const addRoom = (name = "", owner) => {
@@ -65,10 +61,9 @@ const Lobby = (server) => {
       if (room.name === name) {
         throw "A room with the specified name already exists.";
       }
-    })
+    });
 
     const newRoom = Room(name, p, owner);
-
     rooms.set(newRoom.id, newRoom);
 
     return newRoom;
@@ -79,29 +74,33 @@ const Lobby = (server) => {
       throw "The server can't hold any more users.";
     }
 
-    const newUser = User(lobbySocket, p);
-    users.set(newUser.id, newUser);
+    const newUser = User(lobbySocket, p),
+          sharedRooms = [],
+          sharedUsers = [];
 
-    //// TODO: send all data together?
     rooms.forEach((room, roomId) => {
-      lobbySocket.emit("addRoom", {
-        id: room.id,
-        name: room.name
-      });
+      sharedRooms.push(room.shared);
     });
+    lobbySocket.emit("addRoom", ...sharedRooms);
 
     users.forEach((user, userId) => {
-      //// TODO: don't repeat user's self
-      lobbySocket.emit("addUser", user);
+      sharedUsers.push(user.shared);
     });
+    lobbySocket.emit("addUser", ...sharedUsers);
+
+    users.set(newUser.id, newUser);
+    lobbySocket.emit("updateUser", newUser.secret);
+    lobbySocket.emit("connectionSuccess", newUser.id);
+
+    return newUser;
   };
 
   const deleteRoom = (roomId) => {
     rooms.delete(roomId);
   };
 
-  const deleteUser = (id) => {
-    users.delete(id);
+  const deleteUser = (userId) => {
+    users.delete(userId);
   };
 
 
