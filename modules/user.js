@@ -7,20 +7,20 @@ const Avatar = require("./avatar"),
 
 
 const User = (lobbySocket, lobby) => {
+  const secret = new Set(["email"]),
+        shared = new Set(["id", "name"]);
+
   const properties = {
     id: "u" + lobbySocket.conn.id,
     avatar: undefined,
     email: "noreply@example.com",
+    lobby,
+    lobbySocket,
     name: randomName(),
     room: undefined,
 
     get finishRoomConnection () { return finishRoomConnection; }
   };
-
-  Object.seal(properties);
-  Util.freezeProperties(properties, ["id"]);
-  const secret = new Set(["email"]),
-        shared = new Set(["id", "name"]);
 
   const p = new Proxy(properties, {
     get: (obj, prop) => {
@@ -46,14 +46,11 @@ const User = (lobbySocket, lobby) => {
         const data = { id: p.id };
         data[prop] = val;
 
-        if (prop === "room") {
-          ////
-        }
-        else if (secret.has(prop)) {
-          lobbySocket.emit("updateUser", data);
+        if (secret.has(prop)) {
+          p.lobbySocket.emit("updateUser", data);
         }
         else if (shared.has(prop)) {
-          lobby.clients.emit("updateUser", data);
+          p.lobby.clients.emit("updateUser", data);
         }
       }
 
@@ -61,9 +58,12 @@ const User = (lobbySocket, lobby) => {
     }
   });
 
-  p.avatar = Avatar(lobbySocket, p);
+  properties.avatar = Avatar(p.lobbySocket, p);
 
-  const sanitizer = {
+  Object.seal(properties);
+  Util.freezeProperties(properties, ["id"]);
+
+  const userSanitizer = {
     name: (name) => {
       name = Sanitizer.toString(name);
 
@@ -71,7 +71,7 @@ const User = (lobbySocket, lobby) => {
         throw "The user must have a name.";
       }
 
-      lobby.users.forEach((user, id) => {
+      p.lobby.users.forEach((user, id) => {
         if (p.name === name) {
           throw "A user with the specified name already exists.";
         }
@@ -106,7 +106,7 @@ const User = (lobbySocket, lobby) => {
   };
 
   const joinRoom = (roomId) => {
-    const newRoom = lobby.rooms.get(roomId);
+    const newRoom = p.lobby.rooms.get(roomId);
 
     if (newRoom) {
       try {
@@ -114,80 +114,80 @@ const User = (lobbySocket, lobby) => {
       }
       catch (err) {
         console.warn(err);
-        lobbySocket.emit("ioError", err);
+        p.lobbySocket.emit("ioError", err);
       }
 
       p.room = newRoom;
     }
     else {
-      lobbySocket.emit("ioError", "The specified room doesn't exist.");
+      p.lobbySocket.emit("ioError", "The specified room doesn't exist.");
     }
   };
 
 
-  lobbySocket.on("addRoom", (newName) => {
-    newName = sanitizer.name(newName);
+  p.lobbySocket.on("addRoom", (newName) => {
+    newName = Sanitizer.toString(newName, 20);
 
     try {
-      const newRoom = lobby.addRoom(newName, p);
+      const newRoom = p.lobby.addRoom(newName, p);
       joinRoom(newRoom.id);
     }
     catch (err) {
       console.warn(err);
-      lobbySocket.emit("ioError", err);
+      p.lobbySocket.emit("ioError", err);
     }
   });
 
-  lobbySocket.on("disconnect", (reason) => {
+  p.lobbySocket.on("disconnect", (reason) => {
     if (p.room) {
-      //// p.room.deleteUser(p.id);
+      p.room.deleteUser(p.id);
     }
 
-    lobby.deleteUser(p.id);
+    p.lobby.deleteUser(p.id);
   });
 
-  lobbySocket.on("joinRoom", (roomId) => {
-    //// TODO: sanitize
+  p.lobbySocket.on("joinRoom", (roomId) => {
+    roomId = Sanitizer.toString(roomId);
     joinRoom(roomId);
   });
 
-  lobbySocket.on("leaveRoom", () => {
+  p.lobbySocket.on("leaveRoom", () => {
     if (p.room) {
       p.room.deleteUser(id);
     }
     else {
-      lobbySocket.emit("ioError", "The user isn't in a room.");
+      p.lobbySocket.emit("ioError", "The user isn't in a room.");
     }
   });
 
-  lobbySocket.on("startGame", () => {
+  p.lobbySocket.on("startGame", () => {
     if (p.room) {
       p.room.startGame();
     }
     else {
-      lobbySocket.emit("ioError", "The user isn't in a room.");
+      p.lobbySocket.emit("ioError", "The user isn't in a room.");
     }
   });
 
-  lobbySocket.on("updateUser", ({ prop, val }) => {
-    prop = prop + "";
+  p.lobbySocket.on("updateUser", ({ prop, val }) => {
+    prop = Sanitizer.toString(prop);
 
     if (shared.has(prop) &&
         Object.getOwnPropertyDescriptor(p, prop).writable) {
-      const sanitize = sanitizer[prop];
+      const sanitize = userSanitizer[prop];
 
       if (sanitize) {
         try {
-          val = sanitize(val);
+          val = sanitize(val, 20);
           p[prop] = val;
         }
         catch (err) {
           console.warn(err);
-          lobbySocket.emit("ioError", err);
+          p.lobbySocket.emit("ioError", err);
         }
       }
       else {
-        lobbySocket.emit("ioError", `"${prop}" failed to validate.`);
+        p.lobbySocket.emit("ioError", `"${prop}" failed to validate.`);
       }
     }
   });

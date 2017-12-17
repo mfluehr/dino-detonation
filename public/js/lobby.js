@@ -2,17 +2,32 @@
 
 
 const LobbyRoom = (properties, lobbyIo) => {
+  const displayed = new Set(["name", "maxUsers", "numUsers"]);
   const editable = new Set(["name"]);
+
+  properties.receive = (data) => {
+    properties.receiving = true;
+    Object.assign(p, data);
+    properties.receiving = false;
+  };
 
   const p = new Proxy(properties, {
     get: (obj, prop) => {
       return obj[prop];
     },
     set: (obj, prop, val) => {
-      if (editable.has(prop)) {
+      if (p.receiving) {
         obj[prop] = val;
-        lobbyIo.emit("updateRoom", { prop, val });
 
+        if (displayed.has(prop)) {
+          const el = document.getElementById(`${p.id}`);
+          el.querySelector(`.${prop}`).innerText = val;
+        }
+
+        return true;
+      }
+      else if (editable.has(prop)) {
+        //// lobbyIo.emit("updateRoom", { prop, val });
         return true;
       }
 
@@ -24,8 +39,8 @@ const LobbyRoom = (properties, lobbyIo) => {
 };
 
 const LobbyUser = (properties, lobbyIo) => {
-  const editable = new Set(["email", "name"]);
   const displayed = new Set(["name"]);
+  const editable = new Set(["email", "name"]);
 
   properties.receive = (data) => {
     properties.receiving = true;
@@ -35,10 +50,6 @@ const LobbyUser = (properties, lobbyIo) => {
 
   const p = new Proxy(properties, {
     get: (obj, prop) => {
-      if (prop === "el") {
-        return document.getElementById(`${p.id}`);
-      }
-
       return obj[prop];
     },
     set: (obj, prop, val) => {
@@ -46,7 +57,8 @@ const LobbyUser = (properties, lobbyIo) => {
         obj[prop] = val;
 
         if (displayed.has(prop)) {
-          p.el.querySelector(`.${prop}`).innerText = val;
+          const el = document.getElementById(`${p.id}`);
+          el.querySelector(`.${prop}`).innerText = val;
         }
 
         return true;
@@ -91,8 +103,8 @@ const Lobby = () => {
 
 
   const addRoom = () => {
-    const name = fields.roomName.value;
-    lobbyIo.emit("addRoom", name);
+    const roomName = fields.roomName.value;
+    lobbyIo.emit("addRoom", roomName);
   };
 
   const joinRoom = (roomId) => {
@@ -141,7 +153,8 @@ const Lobby = () => {
   });
 
   lobbyIo.on("disconnect", (reason) => {
-    lobbyIo.off();
+    //// TODO: prevent desync of data when disconnecting?
+    // lobbyIo.off();
 
     //// TODO: use proxy instead?
     while (fields.roomList.firstChild) {
@@ -175,6 +188,12 @@ const Lobby = () => {
     ids.forEach((id)  => {
       p.rooms.delete(id);
       unlistRoom(id);
+    });
+  });
+
+  lobbyIo.on("updateRoom", (...rooms) => {
+    rooms.forEach((data) => {
+      p.rooms.get(data.id).receive(data);
     });
   });
 

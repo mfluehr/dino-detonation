@@ -6,19 +6,23 @@ const Level = require("./level"),
 
 
 const Room = (name = "New Room", lobby, owner) => {
+  const shared = new Set(["id", "maxUsers", "name", "numUsers"]);
+
   const properties = {
     id: "r" + Date.now() + Math.random(),
+    level: undefined,
+    lobby,
     maxUsers: 4,
     name,
+    numUsers: 0,
+    owner,
+    roomOptions: RoomOptions(),
+    users: new Map(),
 
     get addUser () { return addUser; },
     get deleteUser () { return deleteUser; },
-    get numUsers () { return users.size; },
     get startGame () { return startGame; }
   };
-
-  Object.seal(properties);
-  Util.freezeProperties(properties, ["id"]);
 
   const p = new Proxy(properties, {
     get: (obj, prop) => {
@@ -26,8 +30,8 @@ const Room = (name = "New Room", lobby, owner) => {
         return {
           id: p.id,
           maxUsers: p.maxUsers,
-          numUsers: p.numUsers,
-          name: p.name
+          name: p.name,
+          numUsers: p.numUsers
         };
       }
 
@@ -36,29 +40,47 @@ const Room = (name = "New Room", lobby, owner) => {
     set: (obj, prop, val) => {
       if (obj[prop] !== val) {
         obj[prop] = val;
-        lobby.clients.emit("updateRoom", { id: p.id, prop, val });
+
+        const data = { id: p.id };
+        data[prop] = val;
+
+        if (shared.has(prop)) {
+          p.lobby.clients.emit("updateRoom", data);
+        }
       }
 
       return true;
     }
   });
 
-  const clients = lobby.io.of(`/${p.id}`),
-        roomOptions = RoomOptions(),
-        users = new Map();
-  let level;
+  properties.clients = p.lobby.io.of(`/${p.id}`);
+
+  Object.seal(properties);
+  Util.freezeProperties(properties, ["id"]);
+
+  p.users.set = (...args) => {
+    Map.prototype.set.apply(p.users, args);
+    p.numUsers = p.users.size;
+    return p.users;
+  };
+
+  p.users.delete = (...args) => {
+    Map.prototype.delete.apply(p.users, args);
+    p.numUsers = p.users.size;
+    return p.users;
+  };
 
 
   const addUser = (userId) => {
-    const newUser = lobby.users.get(userId);
+    const newUser = p.lobby.users.get(userId);
 
-    if (users.get(userId)) {
+    if (p.users.get(userId)) {
       throw "The user is already in the specified room.";
     }
     else if (newUser.room) {
       throw "The user is already in another room.";
     }
-    else if (users.size >= p.maxUsers) {
+    else if (p.users.size >= p.maxUsers) {
       throw "The specified room is already full.";
     }
 
@@ -67,34 +89,34 @@ const Room = (name = "New Room", lobby, owner) => {
       //// p.level.addUser(newUser);
     }
 
-    users.set(userId, newUser);
+    p.users.set(userId, newUser);
   };
 
   const deleteUser = (userId) => {
-    const user = lobby.users.get(userId);
+    const user = p.lobby.users.get(userId);
 
     if (user) {
       if (p.level) {
         p.level.deleteUser(user);
       }
 
-      users.delete(userId);
+      p.users.delete(userId);
 
-      if (users.size === 0) {
-        lobby.deleteRoom(id);
+      if (p.users.size === 0) {
+        p.lobby.deleteRoom(p.id);
       }
     }
   };
 
   const startGame = () => {
     console.log("Start game!");
-    p.level = Level(roomOptions.levels);
+    p.level = Level(p.roomOptions.levels);
   };
 
 
-  clients.on("connection", (roomSocket) => {
+  p.clients.on("connection", (roomSocket) => {
     const userId = roomSocket.conn.id,
-          user = users.get(userId);
+          user = p.users.get(userId);
 
     try {
       user.finishRoomConnection(roomSocket);
