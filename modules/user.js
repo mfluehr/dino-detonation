@@ -19,7 +19,7 @@ const User = (lobbySocket, lobby) => {
     name: randomName(),
     room: undefined,
 
-    get finishRoomConnection () { return finishRoomConnection; }
+    get joinRoomComplete () { return joinRoomComplete; }
   };
 
   const p = new Proxy(properties, {
@@ -94,20 +94,6 @@ const User = (lobbySocket, lobby) => {
     // console.log("Halt!");
   };
 
-  const finishRoomConnection = (roomSocket) => {
-    roomSocket.on("dropBomb", () => {
-      dropBomb();
-    });
-
-    roomSocket.on("halt", () => {
-      halt();
-    });
-
-    roomSocket.on("disconnect", (reason) => {
-      p.room.deleteUser(p.id);
-    });
-  };
-
   const joinRoom = (id) => {
     const room = p.lobby.rooms.get(id);
 
@@ -125,6 +111,20 @@ const User = (lobbySocket, lobby) => {
     else {
       p.lobbySocket.emit("ioError", "The specified room doesn't exist.");
     }
+  };
+
+  const joinRoomComplete = (roomSocket) => {
+    roomSocket.on("dropBomb", () => {
+      dropBomb();
+    });
+
+    roomSocket.on("halt", () => {
+      halt();
+    });
+
+    roomSocket.on("disconnect", (reason) => {
+      p.room.deleteUser(p.id);
+    });
   };
 
 

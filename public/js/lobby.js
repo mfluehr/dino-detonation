@@ -92,7 +92,7 @@ const Lobby = () => {
     get leaveRoom () { return leaveRoom; }
   };
 
-  const fields = {
+  const els = {
     createRoom: document.getElementById("create-room"),
     login: document.getElementById("login"),
     userList: document.getElementById("user-list"),
@@ -103,7 +103,7 @@ const Lobby = () => {
 
 
   const addRoom = () => {
-    const roomName = fields.roomName.value;
+    const roomName = els.roomName.value;
     lobbyIo.emit("addRoom", roomName);
   };
 
@@ -111,12 +111,8 @@ const Lobby = () => {
     lobbyIo.emit("joinRoom", roomId);
   };
 
-  const leaveRoom = () => {
-    lobbyIo.emit("leaveRoom");
-  };
-
   const listRoom = ({ id, name, numUsers, maxUsers }) => {
-    fields.roomList.insertAdjacentHTML("beforeend",
+    els.roomList.insertAdjacentHTML("beforeend",
         `<tr id="${id}">` +
           `<td><a class="name" href="#" data-id="${id}">${name}</a></td>` +
           `<td>` +
@@ -127,14 +123,14 @@ const Lobby = () => {
   };
 
   const listUser = ({ id, name }) => {
-    fields.userList.insertAdjacentHTML("beforeend",
+    els.userList.insertAdjacentHTML("beforeend",
         `<li id="${id}">` +
           `<span class="name">${name}</span>` +
         `</li>`);
   };
 
   const login = () => {
-    p.user.name = fields.userName.value;
+    p.user.name = els.userName.value;
   };
 
   const unlistRoom = (id) => {
@@ -150,6 +146,7 @@ const Lobby = () => {
 
   lobbyIo.on("connectionSuccess", (id) => {
     p.user = p.users.get(id);
+    app.view = "lobby";
   });
 
   lobbyIo.on("disconnect", (reason) => {
@@ -157,12 +154,12 @@ const Lobby = () => {
     // lobbyIo.off();
 
     //// TODO: use proxy instead?
-    while (fields.roomList.firstChild) {
-      fields.roomList.removeChild(fields.roomList.firstChild);
+    while (els.roomList.firstChild) {
+      els.roomList.removeChild(els.roomList.firstChild);
     }
 
-    while (fields.userList.firstChild) {
-      fields.userList.removeChild(fields.userList.firstChild);
+    while (els.userList.firstChild) {
+      els.userList.removeChild(els.userList.firstChild);
     }
 
     p.rooms.clear();
@@ -184,31 +181,18 @@ const Lobby = () => {
     });
   });
 
-  lobbyIo.on("deleteRoom", (...ids) => {
-    ids.forEach((id)  => {
-      p.rooms.delete(id);
-      unlistRoom(id);
-    });
-  });
-
-  lobbyIo.on("joinRoom", (id) => {
-    const room = p.rooms.get(id);
-    console.log("You have joined", room.name);
-    p.room = Room(id);
-  });
-
-  lobbyIo.on("updateRoom", (...rooms) => {
-    rooms.forEach((data) => {
-      p.rooms.get(data.id).receive(data);
-    });
-  });
-
-
   lobbyIo.on("addUser", (...users) => {
     users.forEach((data) => {
       const user = LobbyUser(data, lobbyIo);
       p.users.set(user.id, user);
       listUser(user);
+    });
+  });
+
+  lobbyIo.on("deleteRoom", (...ids) => {
+    ids.forEach((id)  => {
+      p.rooms.delete(id);
+      unlistRoom(id);
     });
   });
 
@@ -219,6 +203,18 @@ const Lobby = () => {
     });
   });
 
+  lobbyIo.on("joinRoom", (id) => {
+    const room = p.rooms.get(id);
+    p.room = Room(id);
+    app.view = "room";
+  });
+
+  lobbyIo.on("updateRoom", (...rooms) => {
+    rooms.forEach((data) => {
+      p.rooms.get(data.id).receive(data);
+    });
+  });
+
   lobbyIo.on("updateUser", (...users) => {
     users.forEach((data) => {
       p.users.get(data.id).receive(data);
@@ -226,22 +222,15 @@ const Lobby = () => {
   });
 
 
-
-
-
-
-
-
-
-  fields.createRoom.addEventListener("click", (e) => {
+  els.createRoom.addEventListener("click", (e) => {
     addRoom();
   });
 
-  fields.login.addEventListener("click", (e) => {
+  els.login.addEventListener("click", (e) => {
     login();
   });
 
-  fields.roomList.addEventListener("click", (e) => {
+  els.roomList.addEventListener("click", (e) => {
     if (e.target.tagName == "A") {
       joinRoom(e.target.dataset.id);
     }

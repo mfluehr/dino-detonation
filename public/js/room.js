@@ -4,6 +4,10 @@
 const Room = (id) => {
   const roomIo = io.connect(`${url}/${id}`);
 
+  const els = {
+    leaveRoom: document.getElementById("leave-room")
+  };
+
   const actions = {
     " ": ["dropBomb", false],
     "ArrowUp": ["moveUp", false],
@@ -45,6 +49,11 @@ const Room = (id) => {
   };
 
 
+  const leaveRoom = () => {
+    //// roomIo.emit("leaveRoom", p.user.id);
+  };
+
+
   roomIo.on("addUser", () => {
     ////
   });
@@ -74,5 +83,10 @@ const Room = (id) => {
     if (action) {
       endAction(action);
     }
+  });
+
+
+  els.leaveRoom.addEventListener("click", (e) => {
+    leaveRoom();
   });
 };

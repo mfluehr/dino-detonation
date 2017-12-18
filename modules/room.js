@@ -120,11 +120,11 @@ const Room = (name = "New Room", lobby, ownerId) => {
 
 
   p.clients.on("connection", (roomSocket) => {
-    const id = roomSocket.conn.id,
+    const id = `u${roomSocket.conn.id}`,
           user = p.users.get(id);
 
     try {
-      user.finishRoomConnection(roomSocket);
+      user.joinRoomComplete(roomSocket);
     }
     catch (err) {
       console.warn(err);

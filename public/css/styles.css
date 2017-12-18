@@ -30,3 +30,20 @@ td {
   flex-basis: 50%;
   flex-grow: 1;
 }
+
+.visible {
+  display: block !important;
+}
+
+
+#lobby-view {
+  display: none;
+}
+
+#room-view {
+  display: none;
+}
+
+#game-view {
+  display: none;
+}
