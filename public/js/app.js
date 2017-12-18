@@ -36,5 +36,5 @@ const App = () => {
 
 const url = "localhost:4000";
 
-const app = App();
-const lobby = Lobby();
+const app = App(),
+      lobby = Lobby();

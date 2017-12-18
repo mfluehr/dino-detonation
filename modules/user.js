@@ -7,8 +7,8 @@ const Avatar = require("./avatar"),
 
 
 const User = (lobbySocket, lobby) => {
-  const secret = new Set(["email"]),
-        shared = new Set(["id", "name"]);
+  const lobbyData = new Set(["name"]),
+        privateData = new Set(["email"]);
 
   const properties = {
     id: "u" + lobbySocket.conn.id,
@@ -24,16 +24,22 @@ const User = (lobbySocket, lobby) => {
 
   const p = new Proxy(properties, {
     get: (obj, prop) => {
-      if (prop == "secret") {
-        return {
-          id: p.id,
-          email: p.email
-        };
-      }
-      else if (prop === "shared") {
+      if (prop === "lobbyData") {
         return {
           id: p.id,
           name: p.name
+        };
+      }
+      else if (prop === "roomData") {
+        return {
+          id: p.id,
+          name: p.name
+        };
+      }
+      else if (prop === "privateData") {
+        return {
+          id: p.id,
+          email: p.email
         };
       }
 
@@ -47,12 +53,12 @@ const User = (lobbySocket, lobby) => {
         data[prop] = val;
 
         if (prop === "room") {
-          p.lobbySocket.emit("joinRoom", val.id);
+          p.lobbySocket.emit("loadRoom", p.room.roomData);
         }
-        else if (secret.has(prop)) {
+        else if (privateData.has(prop)) {
           p.lobbySocket.emit("updateUser", data);
         }
-        else if (shared.has(prop)) {
+        else if (lobbyData.has(prop)) {
           p.lobby.clients.emit("updateUser", data);
         }
       }
@@ -114,6 +120,10 @@ const User = (lobbySocket, lobby) => {
   };
 
   const joinRoomComplete = (roomSocket) => {
+    roomSocket.on("disconnect", (reason) => {
+      p.room.deleteUser(p.id);
+    });
+
     roomSocket.on("dropBomb", () => {
       dropBomb();
     });
@@ -122,8 +132,13 @@ const User = (lobbySocket, lobby) => {
       halt();
     });
 
-    roomSocket.on("disconnect", (reason) => {
-      p.room.deleteUser(p.id);
+    roomSocket.on("leaveRoom", () => {
+      if (p.room) {
+        p.room.deleteUser(p.id);
+      }
+      else {
+        p.lobbySocket.emit("ioError", "The user isn't in a room.");
+      }
     });
   };
 
@@ -154,15 +169,6 @@ const User = (lobbySocket, lobby) => {
     joinRoom(id);
   });
 
-  p.lobbySocket.on("leaveRoom", () => {
-    if (p.room) {
-      p.room.deleteUser(id);
-    }
-    else {
-      p.lobbySocket.emit("ioError", "The user isn't in a room.");
-    }
-  });
-
   p.lobbySocket.on("startGame", () => {
     if (p.room) {
       p.room.startGame();
@@ -175,7 +181,7 @@ const User = (lobbySocket, lobby) => {
   p.lobbySocket.on("updateUser", ({ prop, val }) => {
     prop = sanitizer.toString(prop);
 
-    if (shared.has(prop) &&
+    if (lobbyData.has(prop) &&
         Object.getOwnPropertyDescriptor(p, prop).writable) {
       const san = userSanitizer[prop];
 

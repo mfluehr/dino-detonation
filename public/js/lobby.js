@@ -1,87 +1,18 @@
 "use strict";
 
 
-const LobbyRoom = (properties, lobbyIo) => {
-  const displayed = new Set(["name", "maxUsers", "numUsers"]);
-  const editable = new Set(["name"]);
-
-  properties.receive = (data) => {
-    properties.receiving = true;
-    Object.assign(p, data);
-    properties.receiving = false;
-  };
-
-  const p = new Proxy(properties, {
-    get: (obj, prop) => {
-      return obj[prop];
-    },
-    set: (obj, prop, val) => {
-      if (p.receiving) {
-        obj[prop] = val;
-
-        if (displayed.has(prop)) {
-          const el = document.getElementById(`${p.id}`);
-          el.querySelector(`.${prop}`).innerText = val;
-        }
-
-        return true;
-      }
-      else if (editable.has(prop)) {
-        //// lobbyIo.emit("updateRoom", { prop, val });
-        return true;
-      }
-
-      return false;
-    }
-  });
-
-  return p;
-};
-
-const LobbyUser = (properties, lobbyIo) => {
-  const displayed = new Set(["name"]);
-  const editable = new Set(["email", "name"]);
-
-  properties.receive = (data) => {
-    properties.receiving = true;
-    Object.assign(p, data);
-    properties.receiving = false;
-  };
-
-  const p = new Proxy(properties, {
-    get: (obj, prop) => {
-      return obj[prop];
-    },
-    set: (obj, prop, val) => {
-      if (p.receiving) {
-        obj[prop] = val;
-
-        if (displayed.has(prop)) {
-          const el = document.getElementById(`${p.id}`);
-          el.querySelector(`.${prop}`).innerText = val;
-        }
-
-        return true;
-      }
-      else if (editable.has(prop)) {
-        lobbyIo.emit("updateUser", { prop, val });
-        return true;
-      }
-
-      return false;
-    }
-  });
-
-  return p;
-};
-
-
-
-
 const Lobby = () => {
-  const lobbyIo = io.connect(`${url}/lobby`);
+  const els = {
+    createRoom: document.getElementById("create-room"),
+    login: document.getElementById("login"),
+    roomList: document.getElementById("lobby-view-rooms"),
+    roomName: document.getElementById("room-name"),
+    userList: document.getElementById("lobby-view-users"),
+    userName: document.getElementById("user-name")
+  };
 
   const p = {
+    lobbyIo: io.connect(`${url}/lobby`),
     room: undefined,
     rooms: new Map(),
     user: undefined,
@@ -92,28 +23,19 @@ const Lobby = () => {
     get leaveRoom () { return leaveRoom; }
   };
 
-  const els = {
-    createRoom: document.getElementById("create-room"),
-    login: document.getElementById("login"),
-    userList: document.getElementById("user-list"),
-    userName: document.getElementById("user-name"),
-    roomName: document.getElementById("room-name"),
-    roomList: document.getElementById("room-list")
-  };
-
 
   const addRoom = () => {
     const roomName = els.roomName.value;
-    lobbyIo.emit("addRoom", roomName);
+    p.lobbyIo.emit("addRoom", roomName);
   };
 
-  const joinRoom = (roomId) => {
-    lobbyIo.emit("joinRoom", roomId);
+  const joinRoom = (id) => {
+    p.lobbyIo.emit("joinRoom", id);
   };
 
   const listRoom = ({ id, name, numUsers, maxUsers }) => {
     els.roomList.insertAdjacentHTML("beforeend",
-        `<tr id="${id}">` +
+        `<tr data-id="${id}">` +
           `<td><a class="name" href="#" data-id="${id}">${name}</a></td>` +
           `<td>` +
             `<span class="numUsers">${numUsers}</span> / ` +
@@ -124,7 +46,7 @@ const Lobby = () => {
 
   const listUser = ({ id, name }) => {
     els.userList.insertAdjacentHTML("beforeend",
-        `<li id="${id}">` +
+        `<li data-id="${id}">` +
           `<span class="name">${name}</span>` +
         `</li>`);
   };
@@ -134,25 +56,17 @@ const Lobby = () => {
   };
 
   const unlistRoom = (id) => {
-    const li = document.getElementById(`${id}`);
+    const li = els.roomList.querySelector(`[data-id="${id}"]`);
     li.remove();
   };
 
   const unlistUser = (id) => {
-    const li = document.getElementById(`${id}`);
+    const li = els.userList.querySelector(`[data-id="${id}"]`);
     li.remove();
   };
 
 
-  lobbyIo.on("connectionSuccess", (id) => {
-    p.user = p.users.get(id);
-    app.view = "lobby";
-  });
-
-  lobbyIo.on("disconnect", (reason) => {
-    //// TODO: prevent desync of data when disconnecting?
-    // lobbyIo.off();
-
+  p.lobbyIo.on("disconnect", (reason) => {
     //// TODO: use proxy instead?
     while (els.roomList.firstChild) {
       els.roomList.removeChild(els.roomList.firstChild);
@@ -165,59 +79,63 @@ const Lobby = () => {
     p.rooms.clear();
     p.users.clear();
 
-    console.log("Server connection lost!");
+    console.log("Lobby connection lost!");
   });
 
-  lobbyIo.on("ioError", (err) => {
+  p.lobbyIo.on("ioError", (err) => {
     console.warn(err);
   });
 
 
-  lobbyIo.on("addRoom", (...rooms) => {
+  p.lobbyIo.on("addRoom", (...rooms) => {
     rooms.forEach((data)  => {
-      const room = LobbyRoom(data, lobbyIo);
+      const room = Room(data, p.lobbyIo);
       p.rooms.set(room.id, room);
       listRoom(room);
     });
   });
 
-  lobbyIo.on("addUser", (...users) => {
+  p.lobbyIo.on("addUser", (...users) => {
     users.forEach((data) => {
-      const user = LobbyUser(data, lobbyIo);
+      const user = User(data, p.lobbyIo);
       p.users.set(user.id, user);
       listUser(user);
     });
   });
 
-  lobbyIo.on("deleteRoom", (...ids) => {
+  p.lobbyIo.on("deleteRoom", (...ids) => {
     ids.forEach((id)  => {
       p.rooms.delete(id);
       unlistRoom(id);
     });
   });
 
-  lobbyIo.on("deleteUser", (...ids) => {
+  p.lobbyIo.on("deleteUser", (...ids) => {
     ids.forEach((id)  => {
       p.users.delete(id);
       unlistUser(id);
     });
   });
 
-  lobbyIo.on("joinRoom", (id) => {
-    const room = p.rooms.get(id);
-    p.room = Room(id);
+  p.lobbyIo.on("loadRoom", (syncData) => {
+    p.room = LocalRoom(p.rooms.get(syncData.id).base, syncData);
     app.view = "room";
   });
 
-  lobbyIo.on("updateRoom", (...rooms) => {
+  p.lobbyIo.on("loadUser", (id) => {
+    p.user = LocalUser(p.users.get(id).base);
+    app.view = "lobby";
+  });
+
+  p.lobbyIo.on("updateRoom", (...rooms) => {
     rooms.forEach((data) => {
-      p.rooms.get(data.id).receive(data);
+      Object.assign(p.rooms.get(data.id), data);
     });
   });
 
-  lobbyIo.on("updateUser", (...users) => {
+  p.lobbyIo.on("updateUser", (...users) => {
     users.forEach((data) => {
-      p.users.get(data.id).receive(data);
+      Object.assign(p.users.get(data.id), data);
     });
   });
 
@@ -231,7 +149,7 @@ const Lobby = () => {
   });
 
   els.roomList.addEventListener("click", (e) => {
-    if (e.target.tagName == "A") {
+    if (e.target.tagName === "A") {
       joinRoom(e.target.dataset.id);
     }
   });

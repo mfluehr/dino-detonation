@@ -26,7 +26,7 @@ const Lobby = (server) => {
         users = new Map();
 
   rooms.set = (...args) => {
-    clients.emit("addRoom", args[1].shared);
+    clients.emit("addRoom", args[1].lobbyData);
     return Map.prototype.set.apply(rooms, args);
   };
 
@@ -36,7 +36,7 @@ const Lobby = (server) => {
   };
 
   users.set = (...args) => {
-    clients.emit("addUser", args[1].shared);
+    clients.emit("addUser", args[1].lobbyData);
     return Map.prototype.set.apply(users, args);
   };
 
@@ -75,22 +75,22 @@ const Lobby = (server) => {
     }
 
     const newUser = User(lobbySocket, p),
-          sharedRooms = [],
-          sharedUsers = [];
+          lobbyRooms = [],
+          lobbyUsers = [];
 
     rooms.forEach((room, roomId) => {
-      sharedRooms.push(room.shared);
+      lobbyRooms.push(room.lobbyData);
     });
-    lobbySocket.emit("addRoom", ...sharedRooms);
+    lobbySocket.emit("addRoom", ...lobbyRooms);
 
     users.forEach((user, userId) => {
-      sharedUsers.push(user.shared);
+      lobbyUsers.push(user.lobbyData);
     });
-    lobbySocket.emit("addUser", ...sharedUsers);
+    lobbySocket.emit("addUser", ...lobbyUsers);
 
     users.set(newUser.id, newUser);
-    lobbySocket.emit("updateUser", newUser.secret);
-    lobbySocket.emit("connectionSuccess", newUser.id);
+    lobbySocket.emit("updateUser", newUser.privateData);
+    lobbySocket.emit("loadUser", newUser.id);
 
     return newUser;
   };

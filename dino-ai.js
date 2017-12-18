@@ -103,7 +103,7 @@ const findGoodMine = (avatar) => {
   let bestPath = Path(),
       bestMine;
 
-  mines = tiles.reduce(tile.type == mine);
+  mines = tiles.reduce(tile.type === mine);
 
   bestMine = mines.reduce((mines, best) => {
     let path = safePath(avatar.pos, tile.pos);
@@ -124,12 +124,12 @@ const mapThreatTimes = (avatar) => {
   for (let tile of tiles) {
     tile.timer = 0;
 
-    if (tile.type == explosion) {
+    if (tile.type === explosion) {
       for (let tile of tilesInReach) {
         tile.timer = explosion.timer;
       }
     }
-    else if (tile.type == bomb) {
+    else if (tile.type === bomb) {
       if (isDynamite(bomb)) {
         if (bomb.owner != avatar || avatar.friend) {
           for (let tile of tilesInReach) {
@@ -168,7 +168,7 @@ const mapDynamite = (avatar) => {
     for (let x = bomb.pos.x - 1, y = bomb.pos.y; x >= x1; x --) {
       // 1 = yes, 0 = no, -1 = passthrough
       dynamiteMap[x][y] = tile[x][y].type.destructable;
-      dynamiteMap[x][y] == -1 ? continue : break;
+      dynamiteMap[x][y] === -1 ? continue : break;
     }
 
     // ...
@@ -176,7 +176,7 @@ const mapDynamite = (avatar) => {
 
   for (let  of avatars) {
     if (dynamiteMap(n.pos)) {
-      if (n.team == avatar.team) {
+      if (n.team === avatar.team) {
         friends ++;
       }
       else {
@@ -206,7 +206,7 @@ const Ai = (avatar) => {
     if (dynamiteMap.enemies >= dynamiteMap.friends) {
       avatar.detonateBombs();
     }
-    else if (dynamiteMap.friends == 0 &&
+    else if (dynamiteMap.friends === 0 &&
         dynamiteMap.mines > 0) {
       avatar.detonateBombs();
     }
