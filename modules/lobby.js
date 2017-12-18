@@ -63,7 +63,7 @@ const Lobby = (server) => {
       }
     });
 
-    const newRoom = Room(name, p, owner);
+    const newRoom = Room(name, p, owner.id);
     rooms.set(newRoom.id, newRoom);
 
     return newRoom;

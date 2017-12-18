@@ -3,7 +3,7 @@
 const Avatar = require("./avatar"),
       Util = require("./util"),
       randomName = require("./random-name"),
-      Sanitizer = require("./sanitizer");
+      sanitizer = require("./sanitizer");
 
 
 const User = (lobbySocket, lobby) => {
@@ -46,7 +46,10 @@ const User = (lobbySocket, lobby) => {
         const data = { id: p.id };
         data[prop] = val;
 
-        if (secret.has(prop)) {
+        if (prop === "room") {
+          p.lobbySocket.emit("joinRoom", val.id);
+        }
+        else if (secret.has(prop)) {
           p.lobbySocket.emit("updateUser", data);
         }
         else if (shared.has(prop)) {
@@ -65,7 +68,7 @@ const User = (lobbySocket, lobby) => {
 
   const userSanitizer = {
     name: (name) => {
-      name = Sanitizer.toString(name);
+      name = sanitizer.toString(name);
 
       if (!name) {
         throw "The user must have a name.";
@@ -105,19 +108,19 @@ const User = (lobbySocket, lobby) => {
     });
   };
 
-  const joinRoom = (roomId) => {
-    const newRoom = p.lobby.rooms.get(roomId);
+  const joinRoom = (id) => {
+    const room = p.lobby.rooms.get(id);
 
-    if (newRoom) {
+    if (room) {
       try {
-        newRoom.addUser(p.id);
+        room.addUser(p.id);
       }
       catch (err) {
         console.warn(err);
         p.lobbySocket.emit("ioError", err);
       }
 
-      p.room = newRoom;
+      p.room = room;
     }
     else {
       p.lobbySocket.emit("ioError", "The specified room doesn't exist.");
@@ -125,12 +128,12 @@ const User = (lobbySocket, lobby) => {
   };
 
 
-  p.lobbySocket.on("addRoom", (newName) => {
-    newName = Sanitizer.toString(newName, 20);
+  p.lobbySocket.on("addRoom", (name) => {
+    name = sanitizer.toString(name, 20);
 
     try {
-      const newRoom = p.lobby.addRoom(newName, p);
-      joinRoom(newRoom.id);
+      const room = p.lobby.addRoom(name, p);
+      joinRoom(room.id);
     }
     catch (err) {
       console.warn(err);
@@ -146,9 +149,9 @@ const User = (lobbySocket, lobby) => {
     p.lobby.deleteUser(p.id);
   });
 
-  p.lobbySocket.on("joinRoom", (roomId) => {
-    roomId = Sanitizer.toString(roomId);
-    joinRoom(roomId);
+  p.lobbySocket.on("joinRoom", (id) => {
+    id = sanitizer.toString(id);
+    joinRoom(id);
   });
 
   p.lobbySocket.on("leaveRoom", () => {
@@ -170,15 +173,15 @@ const User = (lobbySocket, lobby) => {
   });
 
   p.lobbySocket.on("updateUser", ({ prop, val }) => {
-    prop = Sanitizer.toString(prop);
+    prop = sanitizer.toString(prop);
 
     if (shared.has(prop) &&
         Object.getOwnPropertyDescriptor(p, prop).writable) {
-      const sanitize = userSanitizer[prop];
+      const san = userSanitizer[prop];
 
-      if (sanitize) {
+      if (san) {
         try {
-          val = sanitize(val, 20);
+          val = san(val, 20);
           p[prop] = val;
         }
         catch (err) {

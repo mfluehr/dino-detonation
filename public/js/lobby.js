@@ -78,14 +78,14 @@ const LobbyUser = (properties, lobbyIo) => {
 
 
 
-
 const Lobby = () => {
   const lobbyIo = io.connect(`${url}/lobby`);
 
   const p = {
+    room: undefined,
     rooms: new Map(),
-    users: new Map(),
     user: undefined,
+    users: new Map(),
 
     get addRoom () { return addRoom; },
     get joinRoom () { return joinRoom; },
@@ -191,6 +191,12 @@ const Lobby = () => {
     });
   });
 
+  lobbyIo.on("joinRoom", (id) => {
+    const room = p.rooms.get(id);
+    console.log("You have joined", room.name);
+    p.room = Room(id);
+  });
+
   lobbyIo.on("updateRoom", (...rooms) => {
     rooms.forEach((data) => {
       p.rooms.get(data.id).receive(data);
@@ -218,7 +224,6 @@ const Lobby = () => {
       p.users.get(data.id).receive(data);
     });
   });
-
 
 
 

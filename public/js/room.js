@@ -1,8 +1,8 @@
 "use strict";
 
 
-const Room = (roomId) => {
-  const roomIo = io.connect(`${url}/${roomId}`);
+const Room = (id) => {
+  const roomIo = io.connect(`${url}/${id}`);
 
   const actions = {
     " ": ["dropBomb", false],

@@ -5,8 +5,8 @@ const Level = require("./level"),
       Util = require("./util");
 
 
-const Room = (name = "New Room", lobby, owner) => {
-  const shared = new Set(["id", "maxUsers", "name", "numUsers"]);
+const Room = (name = "New Room", lobby, ownerId) => {
+  const shared = new Set(["id", "maxUsers", "name", "numUsers", "ownerId"]);
 
   const properties = {
     id: "r" + Date.now() + Math.random(),
@@ -15,7 +15,7 @@ const Room = (name = "New Room", lobby, owner) => {
     maxUsers: 4,
     name,
     numUsers: 0,
-    owner,
+    ownerId,
     roomOptions: RoomOptions(),
     users: new Map(),
 
@@ -31,7 +31,8 @@ const Room = (name = "New Room", lobby, owner) => {
           id: p.id,
           maxUsers: p.maxUsers,
           name: p.name,
-          numUsers: p.numUsers
+          numUsers: p.numUsers,
+          ownerId: p.ownerId
         };
       }
 
@@ -71,13 +72,13 @@ const Room = (name = "New Room", lobby, owner) => {
   };
 
 
-  const addUser = (userId) => {
-    const newUser = p.lobby.users.get(userId);
+  const addUser = (id) => {
+    const user = p.lobby.users.get(id);
 
-    if (p.users.get(userId)) {
+    if (p.users.get(id)) {
       throw "The user is already in the specified room.";
     }
-    else if (newUser.room) {
+    else if (user.room) {
       throw "The user is already in another room.";
     }
     else if (p.users.size >= p.maxUsers) {
@@ -86,21 +87,25 @@ const Room = (name = "New Room", lobby, owner) => {
 
     if (p.level) {
       //// TODO: dynamic adding of avatars
-      //// p.level.addUser(newUser);
+      //// p.level.addUser(user);
     }
 
-    p.users.set(userId, newUser);
+    p.users.set(id, user);
   };
 
-  const deleteUser = (userId) => {
-    const user = p.lobby.users.get(userId);
+  const deleteUser = (id) => {
+    const user = p.lobby.users.get(id);
 
     if (user) {
       if (p.level) {
         p.level.deleteUser(user);
       }
 
-      p.users.delete(userId);
+      if (id = p.ownerId) {
+        //// TODO: change owner to next longest user
+      }
+
+      p.users.delete(id);
 
       if (p.users.size === 0) {
         p.lobby.deleteRoom(p.id);
@@ -115,15 +120,15 @@ const Room = (name = "New Room", lobby, owner) => {
 
 
   p.clients.on("connection", (roomSocket) => {
-    const userId = roomSocket.conn.id,
-          user = p.users.get(userId);
+    const id = roomSocket.conn.id,
+          user = p.users.get(id);
 
     try {
       user.finishRoomConnection(roomSocket);
     }
     catch (err) {
       console.warn(err);
-      roomSocket.emit("ioError", "Connection to room failed.");
+      roomSocket.emit("ioError", "The user is not in the specified room.");
       roomSocket.disconnect();
     }
   });

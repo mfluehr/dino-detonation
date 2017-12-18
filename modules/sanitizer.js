@@ -1,7 +1,7 @@
 const Validator = require("validator");
 
 
-const Sanitizer = {
+const sanitizer = {
   toString: (val, len = 100) => {
     val += "";
     val = val.substr(0, len).trim().replace(/  +/g, " ");
@@ -11,4 +11,4 @@ const Sanitizer = {
   Validator
 };
 
-module.exports = Sanitizer;
+module.exports = sanitizer;
