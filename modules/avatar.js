@@ -4,35 +4,6 @@ const Util = require("./util");
 
 
 const Avatar = (socket, user) => {
-  const pickups = new Set();
-
-  let playerNumber = 0,
-      x = 0,
-      y = 0,
-      bombRange = 0,
-      bombSpeed = 0,
-      bombTimer = 0,
-      bombsUsed = 0,
-      capacity = 0,
-      minCapacity = 0,
-      maxCapacity = 0,
-      face = Util.DIRECTIONS.bottom,
-      speed = 0,
-      minSpeed = 0,
-      maxSpeed = 0;
-
-  const stats = {
-    blocksDestroyed: 0,
-    bombsDropped: 0,
-    deaths: 0,
-    distWalked: 0,
-    kills: 0,
-    pickupsCollected: 0,
-    suicides: 0,
-    survivalTime: 0
-  };
-
-
   const reset = () => {
     const avatarDefaults = user.room.roomOptions.avatars,
           bombDefaults = user.room.roomOptions.bombs;
@@ -69,6 +40,35 @@ const Avatar = (socket, user) => {
   };
 
   const quit = () => {};
+
+
+  const pickups = new Set();
+
+  let playerNumber = 0,
+      x = 0,
+      y = 0,
+      bombRange = 0,
+      bombSpeed = 0,
+      bombTimer = 0,
+      bombsUsed = 0,
+      capacity = 0,
+      minCapacity = 0,
+      maxCapacity = 0,
+      face = Util.DIRECTIONS.bottom,
+      speed = 0,
+      minSpeed = 0,
+      maxSpeed = 0;
+
+  const stats = {
+    blocksDestroyed: 0,
+    bombsDropped: 0,
+    deaths: 0,
+    distWalked: 0,
+    kills: 0,
+    pickupsCollected: 0,
+    suicides: 0,
+    survivalTime: 0
+  };
 
 
   socket.on("dropBomb", () => {

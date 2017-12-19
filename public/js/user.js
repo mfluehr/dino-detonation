@@ -1,13 +1,13 @@
 "use strict";
 
 
-const UserBase = (properties, lobbyIo) => {
-  properties.lobbyIo = lobbyIo;
+const UserBase = (properties, lobbySocket) => {
+  properties.lobbySocket = lobbySocket;
   return properties;
 };
 
-const User = (properties, lobbyIo) => {
-  const base = UserBase(properties, lobbyIo),
+const User = (properties, lobbySocket) => {
+  const base = UserBase(properties, lobbySocket),
         displayed = new Set(["name"]);
 
   const els = {
@@ -34,22 +34,56 @@ const User = (properties, lobbyIo) => {
   return p;
 };
 
-const LocalUser = (base) => {
+const LocalUser = (roomIo, base) => {
+  // const listenToRoom = (roomIo) => {
+  //   roomIo.on("disconnect", (reason) => {
+  //     leaveRoom();
+  //     console.log("Room connection lost!");
+  //   });
+  // };
+
+  const leaveRoom = () => {
+    //// p.room.roomIo.emit("leaveRoom", p.id);
+    p.roomIo.emit("leaveRoom");
+    p.users.clear();
+    delete p.room;
+    app.view = "lobby";
+  };
+
+
   const editable = new Set(["email", "name"]);
 
-  const p = new Proxy(base, {
+  const els = {
+    leaveRoom: document.getElementById("room-view-leave")
+  };
+
+  const properties = Object.assign({
+    roomIo,
+    users: new Map()
+  }, base);
+
+  const p = new Proxy(properties, {
     get: (obj, prop) => {
       return obj[prop];
     },
     set: (obj, prop, val) => {
-      if (editable.has(prop)) {
-        base.lobbyIo.emit("updateUser", { prop, val });
+      if (prop === "room") {
+        obj[prop] = val;
+        return true;
+      }
+      else if (editable.has(prop)) {
+        base.lobbySocket.emit("updateUser", { prop, val });
         return true;
       }
 
       return false;
     }
   });
+
+  els.leaveRoom.addEventListener("click", (e) => {
+    leaveRoom();
+  });
+
 
   return p;
 };

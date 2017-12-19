@@ -4,11 +4,11 @@
 const Lobby = () => {
   const addRoom = () => {
     const roomName = els.roomName.value;
-    p.lobbyIo.emit("addRoom", roomName);
+    p.lobbySocket.emit("addRoom", roomName);
   };
 
   const joinRoom = (id) => {
-    p.lobbyIo.emit("joinRoom", id);
+    p.lobbySocket.emit("joinRoom", id);
   };
 
   const listRoom = ({ id, name, numUsers, maxUsers }) => {
@@ -54,7 +54,7 @@ const Lobby = () => {
   };
 
   const p = {
-    lobbyIo: io.connect(`${app.url}/lobby`),
+    lobbySocket: io.connect(`${app.url}/lobby`),
     room: undefined,
     rooms: new Map(),
     user: undefined,
@@ -100,59 +100,65 @@ const Lobby = () => {
   };
 
 
-  p.lobbyIo.on("addRoom", (...rooms) => {
+  p.lobbySocket.on("addRoom", (...rooms) => {
     rooms.forEach((data)  => {
-      const room = Room(data, p.lobbyIo);
+      const room = Room(data, p.lobbySocket);
       p.rooms.set(room.id, room);
     });
   });
 
-  p.lobbyIo.on("addUser", (...users) => {
+  p.lobbySocket.on("addUser", (...users) => {
     users.forEach((data) => {
-      const user = User(data, p.lobbyIo);
+      const user = User(data, p.lobbySocket);
       p.users.set(user.id, user);
     });
   });
 
-  p.lobbyIo.on("deleteRoom", (...ids) => {
+  p.lobbySocket.on("deleteRoom", (...ids) => {
     ids.forEach((id)  => {
       p.rooms.delete(id);
     });
   });
 
-  p.lobbyIo.on("deleteUser", (...ids) => {
+  p.lobbySocket.on("deleteUser", (...ids) => {
     ids.forEach((id)  => {
       p.users.delete(id);
     });
   });
 
-  p.lobbyIo.on("disconnect", (reason) => {
+  p.lobbySocket.on("disconnect", (reason) => {
     p.rooms.clear();
     p.users.clear();
+    delete p.user;
     console.log("Lobby connection lost!");
   });
 
-  p.lobbyIo.on("ioError", (err) => {
+  p.lobbySocket.on("ioError", (err) => {
     console.warn(err);
   });
 
-  p.lobbyIo.on("loadRoom", (syncData) => {
-    p.room = LocalRoom(p.rooms.get(syncData.id).base, syncData);
+  p.lobbySocket.on("loadRoom", (syncData) => {
+    //// p.room = LocalRoom(p.rooms.get(syncData.id).base, syncData);
+    p.room = LocalRoom(p.lobbySocket, p.rooms.get(syncData.id).base, syncData);
+    p.user.room = p.room;
     app.view = "room";
   });
 
-  p.lobbyIo.on("loadUser", (id) => {
-    p.user = LocalUser(p.users.get(id).base);
+  p.lobbySocket.on("loadUser", (id) => {
+    const el = els.userList.querySelector(`[data-id="${id}"]`);
+    el.classList.add("local");
+    //// p.user = LocalUser(p.users.get(id).base);
+    p.user = LocalUser(p.lobbySocket, p.users.get(id).base);
     app.view = "lobby";
   });
 
-  p.lobbyIo.on("updateRoom", (...rooms) => {
+  p.lobbySocket.on("updateRoom", (...rooms) => {
     rooms.forEach((data) => {
       Object.assign(p.rooms.get(data.id), data);
     });
   });
 
-  p.lobbyIo.on("updateUser", (...users) => {
+  p.lobbySocket.on("updateUser", (...users) => {
     users.forEach((data) => {
       Object.assign(p.users.get(data.id), data);
     });

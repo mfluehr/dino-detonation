@@ -6,6 +6,64 @@ const socket = require("socket.io"),
 
 
 const Lobby = (server) => {
+  const addRoom = (name = "", owner) => {
+    if (owner.room) {
+      throw "The user can't create a room while in another room.";
+    }
+    else if (rooms.size >= maxRooms) {
+      throw "The server can't hold any more rooms.";
+    }
+    else if (name.length === 0) {
+      throw "The room must have a name.";
+    }
+
+    rooms.forEach((room, roomId) => {
+      if (room.name === name) {
+        throw "A room with the specified name already exists.";
+      }
+    });
+
+    const newRoom = Room(name, p, owner.id);
+    rooms.set(newRoom.id, newRoom);
+
+    return newRoom;
+  };
+
+  const addUser = (lobbySocket) => {
+    if (users.size >= maxUsers) {
+      throw "The server can't hold any more users.";
+    }
+
+    const newUser = User(lobbySocket, p),
+          lobbyRooms = [],
+          lobbyUsers = [];
+
+    rooms.forEach((room, roomId) => {
+      lobbyRooms.push(room.lobbyData);
+    });
+    lobbySocket.emit("addRoom", ...lobbyRooms);
+
+    users.forEach((user, userId) => {
+      lobbyUsers.push(user.lobbyData);
+    });
+    lobbySocket.emit("addUser", ...lobbyUsers);
+
+    users.set(newUser.id, newUser);
+    lobbySocket.emit("updateUser", newUser.privateData);
+    lobbySocket.emit("loadUser", newUser.id);
+
+    return newUser;
+  };
+
+  const deleteRoom = (roomId) => {
+    rooms.delete(roomId);
+  };
+
+  const deleteUser = (userId) => {
+    users.delete(userId);
+  };
+
+
   const p = {
     get io () { return io; },
     get clients () { return clients; },
@@ -46,72 +104,14 @@ const Lobby = (server) => {
   };
 
 
-  const addRoom = (name = "", owner) => {
-    if (owner.room) {
-      throw "The user can't create a room while in another room.";
-    }
-    else if (rooms.size >= maxRooms) {
-      throw "The server can't hold any more rooms.";
-    }
-    else if (name.length === 0) {
-      throw "The room must have a name.";
-    }
-
-    rooms.forEach((room, roomId) => {
-      if (room.name === name) {
-        throw "A room with the specified name already exists.";
-      }
-    });
-
-    const newRoom = Room(name, p, owner.id);
-    rooms.set(newRoom.id, newRoom);
-
-    return newRoom;
-  };
-
-  const addUser = (lobbyIo) => {
-    if (users.size >= maxUsers) {
-      throw "The server can't hold any more users.";
-    }
-
-    const newUser = User(lobbyIo, p),
-          lobbyRooms = [],
-          lobbyUsers = [];
-
-    rooms.forEach((room, roomId) => {
-      lobbyRooms.push(room.lobbyData);
-    });
-    lobbyIo.emit("addRoom", ...lobbyRooms);
-
-    users.forEach((user, userId) => {
-      lobbyUsers.push(user.lobbyData);
-    });
-    lobbyIo.emit("addUser", ...lobbyUsers);
-
-    users.set(newUser.id, newUser);
-    lobbyIo.emit("updateUser", newUser.privateData);
-    lobbyIo.emit("loadUser", newUser.id);
-
-    return newUser;
-  };
-
-  const deleteRoom = (roomId) => {
-    rooms.delete(roomId);
-  };
-
-  const deleteUser = (userId) => {
-    users.delete(userId);
-  };
-
-
-  clients.on("connection", (lobbyIo) => {
+  clients.on("connection", (lobbySocket) => {
     try {
-      addUser(lobbyIo);
+      addUser(lobbySocket);
     }
     catch (err) {
       console.warn(err);
-      lobbyIo.emit("ioError", err);
-      lobbyIo.disconnect();
+      lobbySocket.emit("ioError", err);
+      lobbySocket.disconnect();
     }
   });
 

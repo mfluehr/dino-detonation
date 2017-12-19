@@ -31,6 +31,11 @@ td {
   flex-grow: 1;
 }
 
+.local {
+  color: #ff5;
+  font-weight: bold;
+}
+
 .visible {
   display: block !important;
 }

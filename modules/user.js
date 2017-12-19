@@ -6,20 +6,45 @@ const Avatar = require("./avatar"),
       sanitizer = require("./sanitizer");
 
 
-const User = (lobbyIo, lobby) => {
+const User = (socket, lobby) => {
+  const dropBomb = () => {
+    //p.room.level.addBomb(id);
+    console.log("Drop");
+  };
+
+  const halt = () => {
+    // console.log("Halt!");
+  };
+
+  const joinRoom = (id) => {
+    const room = p.lobby.rooms.get(id);
+
+    if (room) {
+      try {
+        room.addUser(p.id);
+      }
+      catch (err) {
+        console.warn(err);
+        p.socket.emit("ioError", err);
+      }
+    }
+    else {
+      p.socket.emit("ioError", "The specified room doesn't exist.");
+    }
+  };
+
+
   const lobbyData = new Set(["name"]),
         privateData = new Set(["email"]);
 
   const properties = {
-    id: "u" + lobbyIo.conn.id,
+    id: "u" + socket.conn.id,
     avatar: undefined,
     email: "noreply@example.com",
     lobby,
-    lobbyIo,
+    socket,
     name: randomName(),
-    room: undefined,
-
-    get joinRoomComplete () { return joinRoomComplete; }
+    room: undefined
   };
 
   const p = new Proxy(properties, {
@@ -54,11 +79,12 @@ const User = (lobbyIo, lobby) => {
 
         if (prop === "room") {
           if (val) {
-            p.lobbyIo.emit("loadRoom", p.room.roomData);
+            p.socket.emit("loadRoom", p.room.roomData);
+            p.socket.join(p.id);
           }
         }
         else if (privateData.has(prop)) {
-          p.lobbyIo.emit("updateUser", data);
+          p.socket.emit("updateUser", data);
         }
         else if (lobbyData.has(prop)) {
           p.lobby.clients.emit("updateUser", data);
@@ -69,7 +95,7 @@ const User = (lobbyIo, lobby) => {
     }
   });
 
-  properties.avatar = Avatar(p.lobbyIo, p);
+  properties.avatar = Avatar(p.socket, p);
 
   Object.seal(properties);
   Util.freezeProperties(properties, ["id"]);
@@ -93,59 +119,20 @@ const User = (lobbyIo, lobby) => {
   };
 
 
-  const dropBomb = () => {
-    //p.room.level.addBomb(id);
-    console.log("Drop");
-  };
-
-  const halt = () => {
-    // console.log("Halt!");
-  };
-
-  const joinRoom = (id) => {
-    const room = p.lobby.rooms.get(id);
-
-    if (room) {
-      try {
-        room.addUser(p.id);
-      }
-      catch (err) {
-        console.warn(err);
-        p.lobbyIo.emit("ioError", err);
-      }
-    }
-    else {
-      p.lobbyIo.emit("ioError", "The specified room doesn't exist.");
-    }
-  };
-
-  const joinRoomComplete = (roomIo) => {
-    roomIo.on("disconnect", (reason) => {
-      if (p.room) {
-        p.room.deleteUser(p.id);
-      }
-    });
-
-    roomIo.on("dropBomb", () => {
-      dropBomb();
-    });
-
-    roomIo.on("halt", () => {
-      halt();
-    });
-
-    roomIo.on("leaveRoom", () => {
-      if (p.room) {
-        p.room.deleteUser(p.id);
-      }
-      else {
-        p.lobbyIo.emit("ioError", "The user isn't in a room.");
-      }
-    });
-  };
 
 
-  p.lobbyIo.on("addRoom", (name) => {
+
+  p.socket.on("dropBomb", () => {
+    dropBomb();
+  });
+
+  p.socket.on("halt", () => {
+    halt();
+  });
+
+
+
+  p.socket.on("addRoom", (name) => {
     name = sanitizer.toString(name, 20);
 
     try {
@@ -154,11 +141,11 @@ const User = (lobbyIo, lobby) => {
     }
     catch (err) {
       console.warn(err);
-      p.lobbyIo.emit("ioError", err);
+      p.socket.emit("ioError", err);
     }
   });
 
-  p.lobbyIo.on("disconnect", (reason) => {
+  p.socket.on("disconnect", (reason) => {
     if (p.room) {
       p.room.deleteUser(p.id);
     }
@@ -166,21 +153,30 @@ const User = (lobbyIo, lobby) => {
     p.lobby.deleteUser(p.id);
   });
 
-  p.lobbyIo.on("joinRoom", (id) => {
+  p.socket.on("joinRoom", (id) => {
     id = sanitizer.toString(id);
     joinRoom(id);
   });
 
-  p.lobbyIo.on("startGame", () => {
+  p.socket.on("leaveRoom", () => {
+    if (p.room) {
+      p.room.deleteUser(p.id);
+    }
+    else {
+      p.socket.emit("ioError", "The user isn't in a room.");
+    }
+  });
+
+  p.socket.on("startGame", () => {
     if (p.room) {
       p.room.startGame();
     }
     else {
-      p.lobbyIo.emit("ioError", "The user isn't in a room.");
+      p.socket.emit("ioError", "The user isn't in a room.");
     }
   });
 
-  p.lobbyIo.on("updateUser", ({ prop, val }) => {
+  p.socket.on("updateUser", ({ prop, val }) => {
     prop = sanitizer.toString(prop);
 
     if (lobbyData.has(prop) &&
@@ -194,11 +190,11 @@ const User = (lobbyIo, lobby) => {
         }
         catch (err) {
           console.warn(err);
-          p.lobbyIo.emit("ioError", err);
+          p.socket.emit("ioError", err);
         }
       }
       else {
-        p.lobbyIo.emit("ioError", `"${prop}" failed to validate.`);
+        p.socket.emit("ioError", `"${prop}" failed to validate.`);
       }
     }
   });

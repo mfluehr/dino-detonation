@@ -1,13 +1,13 @@
 "use strict";
 
 
-const RoomBase = (properties, lobbyIo) => {
-  properties.lobbyIo = lobbyIo;
+const RoomBase = (properties, lobbySocket) => {
+  properties.lobbySocket = lobbySocket;
   return properties;
 };
 
-const Room = (properties, lobbyIo) => {
-  const base = RoomBase(properties, lobbyIo),
+const Room = (properties, lobbySocket) => {
+  const base = RoomBase(properties, lobbySocket),
         displayed = new Set(["name", "maxUsers", "numUsers"]);
 
   const els = {
@@ -34,13 +34,7 @@ const Room = (properties, lobbyIo) => {
   return p;
 };
 
-const LocalRoom = (base, syncData) => {
-  const leaveRoom = () => {
-    p.roomIo.emit("leaveRoom", p.id);
-    delete p.room;
-    app.view = "lobby";
-  };
-
+const LocalRoom = (roomIo, base, syncData) => {
   const listUser = ({ id, name }) => {
     els.userList.insertAdjacentHTML("beforeend",
         `<li data-id="${id}">` +
@@ -93,15 +87,15 @@ const LocalRoom = (base, syncData) => {
     }
   };
 
-  const els = {
-    leaveRoom: document.getElementById("room-view-leave"),
-    userList: document.getElementById("room-view-users")
-  };
-
   const properties = Object.assign({
-    roomIo: io.connect(`${app.url}/${base.id}`),
+    // roomIo: io.connect(`${app.url}/${base.id}`),
+    roomIo,
     users: new Map()
   }, base);
+
+  const els = {
+    userList: document.getElementById("room-view-users")
+  };
 
   const p = new Proxy(properties, {
     get: (obj, prop) => {
@@ -119,6 +113,13 @@ const LocalRoom = (base, syncData) => {
     return Map.prototype.set.apply(p.users, args);
   };
 
+  p.users.clear = (...args) => {
+    while (els.userList.firstChild) {
+      els.userList.removeChild(els.userList.firstChild);
+    }
+    return Map.prototype.clear.apply(p.users, args);
+  };
+
   p.users.delete = (...args) => {
     unlistUser(args[0]);
     return Map.prototype.delete.apply(p.users, args);
@@ -130,30 +131,24 @@ const LocalRoom = (base, syncData) => {
   });
 
 
-  p.roomIo.on("disconnect", (reason) => {
-    ////
-    console.log("Room connection lost!");
-  });
-
-  p.roomIo.on("ioError", (err) => {
-    console.warn(err);
-  });
 
 
-  p.roomIo.on("addUser", (...users) => {
-    users.forEach((data) => {
-      const user = User(data, p.lobbyIo);
-      p.users.set(user.id, user);
-      // listUser(user);
-    });
-  });
-
-  p.roomIo.on("deleteUser", (...ids) => {
-    ids.forEach((id)  => {
-      p.users.delete(id);
-      // unlistUser(id);
-    });
-  });
+  // p.roomIo.on("addUser", (...users) => {
+  //   users.forEach((data) => {
+  //     const user = User(data, p.lobbySocket);
+  //     p.users.set(user.id, user);
+  //   });
+  // });
+  //
+  // p.roomIo.on("deleteUser", (...ids) => {
+  //   ids.forEach((id)  => {
+  //     p.users.delete(id);
+  //   });
+  // });
+  //
+  // p.roomIo.on("ioError", (err) => {
+  //   console.warn(err);
+  // });
 
 
   document.addEventListener("keydown", (e) => {
@@ -175,9 +170,7 @@ const LocalRoom = (base, syncData) => {
   });
 
 
-  els.leaveRoom.addEventListener("click", (e) => {
-    leaveRoom();
-  });
+
 
 
   return p;
