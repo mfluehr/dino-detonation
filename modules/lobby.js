@@ -69,28 +69,28 @@ const Lobby = (server) => {
     return newRoom;
   };
 
-  const addUser = (lobbySocket) => {
+  const addUser = (lobbyIo) => {
     if (users.size >= maxUsers) {
       throw "The server can't hold any more users.";
     }
 
-    const newUser = User(lobbySocket, p),
+    const newUser = User(lobbyIo, p),
           lobbyRooms = [],
           lobbyUsers = [];
 
     rooms.forEach((room, roomId) => {
       lobbyRooms.push(room.lobbyData);
     });
-    lobbySocket.emit("addRoom", ...lobbyRooms);
+    lobbyIo.emit("addRoom", ...lobbyRooms);
 
     users.forEach((user, userId) => {
       lobbyUsers.push(user.lobbyData);
     });
-    lobbySocket.emit("addUser", ...lobbyUsers);
+    lobbyIo.emit("addUser", ...lobbyUsers);
 
     users.set(newUser.id, newUser);
-    lobbySocket.emit("updateUser", newUser.privateData);
-    lobbySocket.emit("loadUser", newUser.id);
+    lobbyIo.emit("updateUser", newUser.privateData);
+    lobbyIo.emit("loadUser", newUser.id);
 
     return newUser;
   };
@@ -104,14 +104,14 @@ const Lobby = (server) => {
   };
 
 
-  clients.on("connection", (lobbySocket) => {
+  clients.on("connection", (lobbyIo) => {
     try {
-      addUser(lobbySocket);
+      addUser(lobbyIo);
     }
     catch (err) {
       console.warn(err);
-      lobbySocket.emit("ioError", err);
-      lobbySocket.disconnect();
+      lobbyIo.emit("ioError", err);
+      lobbyIo.disconnect();
     }
   });
 

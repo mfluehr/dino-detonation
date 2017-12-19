@@ -35,35 +35,23 @@ const Room = (properties, lobbyIo) => {
 };
 
 const LocalRoom = (base, syncData) => {
-  const els = {
-    leaveRoom: document.getElementById("room-view-leave"),
-    userList: document.getElementById("room-view-users")
+  const leaveRoom = () => {
+    p.roomIo.emit("leaveRoom", p.id);
+    delete p.room;
+    app.view = "lobby";
   };
 
-  const properties = Object.assign({
-    roomIo: io.connect(`${url}/${base.id}`),
-    users: new Map()
-  }, base);
+  const listUser = ({ id, name }) => {
+    els.userList.insertAdjacentHTML("beforeend",
+        `<li data-id="${id}">` +
+          `<span class="name">${name}</span>` +
+        `</li>`);
+  };
 
-  const p = new Proxy(properties, {
-    get: (obj, prop) => {
-      if (prop === "base") return base;
-      return obj[prop];
-    },
-    set: (obj, prop, val) => {
-      obj[prop] = val;
-      return true;
-    }
-  });
-
-  syncData.users.forEach((data) => {
-    p.users.set(data.id, data);
-  });
-
-  console.log(p);
-
-
-
+  const unlistUser = (id) => {
+    const li = els.userList.querySelector(`[data-id=${id}]`);
+    li.remove();
+  };
 
 
   const actions = {
@@ -73,7 +61,6 @@ const LocalRoom = (base, syncData) => {
     "ArrowDown": ["moveDown", false],
     "ArrowLeft": ["moveLeft", false]
   };
-
 
   const endAction = (action) => {
     action[1] = false;
@@ -106,23 +93,41 @@ const LocalRoom = (base, syncData) => {
     }
   };
 
-
-  const leaveRoom = () => {
-    p.roomIo.emit("leaveRoom", p.id);
-    app.view = "lobby";
+  const els = {
+    leaveRoom: document.getElementById("room-view-leave"),
+    userList: document.getElementById("room-view-users")
   };
 
-  const listUser = ({ id, name }) => {
-    els.userList.insertAdjacentHTML("beforeend",
-        `<li data-id="${id}">` +
-          `<span class="name">${name}</span>` +
-        `</li>`);
+  const properties = Object.assign({
+    roomIo: io.connect(`${app.url}/${base.id}`),
+    users: new Map()
+  }, base);
+
+  const p = new Proxy(properties, {
+    get: (obj, prop) => {
+      if (prop === "base") return base;
+      return obj[prop];
+    },
+    set: (obj, prop, val) => {
+      obj[prop] = val;
+      return true;
+    }
+  });
+
+  p.users.set = (...args) => {
+    listUser(args[1]);
+    return Map.prototype.set.apply(p.users, args);
   };
 
-  const unlistUser = (id) => {
-    const li = els.userList.querySelector(`[data-id=${id}]`);
-    li.remove();
+  p.users.delete = (...args) => {
+    unlistUser(args[0]);
+    return Map.prototype.delete.apply(p.users, args);
   };
+
+
+  syncData.users.forEach((data) => {
+    p.users.set(data.id, data);
+  });
 
 
   p.roomIo.on("disconnect", (reason) => {
@@ -139,14 +144,14 @@ const LocalRoom = (base, syncData) => {
     users.forEach((data) => {
       const user = User(data, p.lobbyIo);
       p.users.set(user.id, user);
-      listUser(user);
+      // listUser(user);
     });
   });
 
   p.roomIo.on("deleteUser", (...ids) => {
     ids.forEach((id)  => {
       p.users.delete(id);
-      unlistUser(id);
+      // unlistUser(id);
     });
   });
 

@@ -9,6 +9,7 @@ const App = () => {
       room: document.getElementById("room-view"),
       game: document.getElementById("game-view")
     },
+    url: "localhost:4000",
     view: undefined
   };
 
@@ -33,8 +34,6 @@ const App = () => {
   return p;
 };
 
-
-const url = "localhost:4000";
 
 const app = App(),
       lobby = Lobby();

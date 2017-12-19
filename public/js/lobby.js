@@ -2,28 +2,6 @@
 
 
 const Lobby = () => {
-  const els = {
-    createRoom: document.getElementById("create-room"),
-    login: document.getElementById("login"),
-    roomList: document.getElementById("lobby-view-rooms"),
-    roomName: document.getElementById("room-name"),
-    userList: document.getElementById("lobby-view-users"),
-    userName: document.getElementById("user-name")
-  };
-
-  const p = {
-    lobbyIo: io.connect(`${url}/lobby`),
-    room: undefined,
-    rooms: new Map(),
-    user: undefined,
-    users: new Map(),
-
-    get addRoom () { return addRoom; },
-    get joinRoom () { return joinRoom; },
-    get leaveRoom () { return leaveRoom; }
-  };
-
-
   const addRoom = () => {
     const roomName = els.roomName.value;
     p.lobbyIo.emit("addRoom", roomName);
@@ -66,32 +44,66 @@ const Lobby = () => {
   };
 
 
-  p.lobbyIo.on("disconnect", (reason) => {
-    //// TODO: use proxy instead?
+  const els = {
+    createRoom: document.getElementById("create-room"),
+    login: document.getElementById("login"),
+    roomList: document.getElementById("lobby-view-rooms"),
+    roomName: document.getElementById("room-name"),
+    userList: document.getElementById("lobby-view-users"),
+    userName: document.getElementById("user-name")
+  };
+
+  const p = {
+    lobbyIo: io.connect(`${app.url}/lobby`),
+    room: undefined,
+    rooms: new Map(),
+    user: undefined,
+    users: new Map(),
+
+    get addRoom () { return addRoom; },
+    get joinRoom () { return joinRoom; },
+    get leaveRoom () { return leaveRoom; }
+  };
+
+  p.rooms.set = (...args) => {
+    listRoom(args[1]);
+    return Map.prototype.set.apply(p.rooms, args);
+  };
+
+  p.rooms.clear = (...args) => {
     while (els.roomList.firstChild) {
       els.roomList.removeChild(els.roomList.firstChild);
     }
+    return Map.prototype.clear.apply(p.rooms, args);
+  };
 
+  p.rooms.delete = (...args) => {
+    unlistRoom(args[0]);
+    return Map.prototype.delete.apply(p.rooms, args);
+  };
+
+  p.users.set = (...args) => {
+    listUser(args[1]);
+    return Map.prototype.set.apply(p.users, args);
+  };
+
+  p.users.clear = (...args) => {
     while (els.userList.firstChild) {
       els.userList.removeChild(els.userList.firstChild);
     }
+    return Map.prototype.clear.apply(p.users, args);
+  };
 
-    p.rooms.clear();
-    p.users.clear();
-
-    console.log("Lobby connection lost!");
-  });
-
-  p.lobbyIo.on("ioError", (err) => {
-    console.warn(err);
-  });
+  p.users.delete = (...args) => {
+    unlistUser(args[0]);
+    return Map.prototype.delete.apply(p.users, args);
+  };
 
 
   p.lobbyIo.on("addRoom", (...rooms) => {
     rooms.forEach((data)  => {
       const room = Room(data, p.lobbyIo);
       p.rooms.set(room.id, room);
-      listRoom(room);
     });
   });
 
@@ -99,22 +111,29 @@ const Lobby = () => {
     users.forEach((data) => {
       const user = User(data, p.lobbyIo);
       p.users.set(user.id, user);
-      listUser(user);
     });
   });
 
   p.lobbyIo.on("deleteRoom", (...ids) => {
     ids.forEach((id)  => {
       p.rooms.delete(id);
-      unlistRoom(id);
     });
   });
 
   p.lobbyIo.on("deleteUser", (...ids) => {
     ids.forEach((id)  => {
       p.users.delete(id);
-      unlistUser(id);
     });
+  });
+
+  p.lobbyIo.on("disconnect", (reason) => {
+    p.rooms.clear();
+    p.users.clear();
+    console.log("Lobby connection lost!");
+  });
+
+  p.lobbyIo.on("ioError", (err) => {
+    console.warn(err);
   });
 
   p.lobbyIo.on("loadRoom", (syncData) => {

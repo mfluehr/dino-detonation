@@ -6,16 +6,16 @@ const Avatar = require("./avatar"),
       sanitizer = require("./sanitizer");
 
 
-const User = (lobbySocket, lobby) => {
+const User = (lobbyIo, lobby) => {
   const lobbyData = new Set(["name"]),
         privateData = new Set(["email"]);
 
   const properties = {
-    id: "u" + lobbySocket.conn.id,
+    id: "u" + lobbyIo.conn.id,
     avatar: undefined,
     email: "noreply@example.com",
     lobby,
-    lobbySocket,
+    lobbyIo,
     name: randomName(),
     room: undefined,
 
@@ -53,10 +53,12 @@ const User = (lobbySocket, lobby) => {
         data[prop] = val;
 
         if (prop === "room") {
-          p.lobbySocket.emit("loadRoom", p.room.roomData);
+          if (val) {
+            p.lobbyIo.emit("loadRoom", p.room.roomData);
+          }
         }
         else if (privateData.has(prop)) {
-          p.lobbySocket.emit("updateUser", data);
+          p.lobbyIo.emit("updateUser", data);
         }
         else if (lobbyData.has(prop)) {
           p.lobby.clients.emit("updateUser", data);
@@ -67,7 +69,7 @@ const User = (lobbySocket, lobby) => {
     }
   });
 
-  properties.avatar = Avatar(p.lobbySocket, p);
+  properties.avatar = Avatar(p.lobbyIo, p);
 
   Object.seal(properties);
   Util.freezeProperties(properties, ["id"]);
@@ -109,41 +111,41 @@ const User = (lobbySocket, lobby) => {
       }
       catch (err) {
         console.warn(err);
-        p.lobbySocket.emit("ioError", err);
+        p.lobbyIo.emit("ioError", err);
       }
-
-      p.room = room;
     }
     else {
-      p.lobbySocket.emit("ioError", "The specified room doesn't exist.");
+      p.lobbyIo.emit("ioError", "The specified room doesn't exist.");
     }
   };
 
-  const joinRoomComplete = (roomSocket) => {
-    roomSocket.on("disconnect", (reason) => {
-      p.room.deleteUser(p.id);
+  const joinRoomComplete = (roomIo) => {
+    roomIo.on("disconnect", (reason) => {
+      if (p.room) {
+        p.room.deleteUser(p.id);
+      }
     });
 
-    roomSocket.on("dropBomb", () => {
+    roomIo.on("dropBomb", () => {
       dropBomb();
     });
 
-    roomSocket.on("halt", () => {
+    roomIo.on("halt", () => {
       halt();
     });
 
-    roomSocket.on("leaveRoom", () => {
+    roomIo.on("leaveRoom", () => {
       if (p.room) {
         p.room.deleteUser(p.id);
       }
       else {
-        p.lobbySocket.emit("ioError", "The user isn't in a room.");
+        p.lobbyIo.emit("ioError", "The user isn't in a room.");
       }
     });
   };
 
 
-  p.lobbySocket.on("addRoom", (name) => {
+  p.lobbyIo.on("addRoom", (name) => {
     name = sanitizer.toString(name, 20);
 
     try {
@@ -152,11 +154,11 @@ const User = (lobbySocket, lobby) => {
     }
     catch (err) {
       console.warn(err);
-      p.lobbySocket.emit("ioError", err);
+      p.lobbyIo.emit("ioError", err);
     }
   });
 
-  p.lobbySocket.on("disconnect", (reason) => {
+  p.lobbyIo.on("disconnect", (reason) => {
     if (p.room) {
       p.room.deleteUser(p.id);
     }
@@ -164,21 +166,21 @@ const User = (lobbySocket, lobby) => {
     p.lobby.deleteUser(p.id);
   });
 
-  p.lobbySocket.on("joinRoom", (id) => {
+  p.lobbyIo.on("joinRoom", (id) => {
     id = sanitizer.toString(id);
     joinRoom(id);
   });
 
-  p.lobbySocket.on("startGame", () => {
+  p.lobbyIo.on("startGame", () => {
     if (p.room) {
       p.room.startGame();
     }
     else {
-      p.lobbySocket.emit("ioError", "The user isn't in a room.");
+      p.lobbyIo.emit("ioError", "The user isn't in a room.");
     }
   });
 
-  p.lobbySocket.on("updateUser", ({ prop, val }) => {
+  p.lobbyIo.on("updateUser", ({ prop, val }) => {
     prop = sanitizer.toString(prop);
 
     if (lobbyData.has(prop) &&
@@ -192,11 +194,11 @@ const User = (lobbySocket, lobby) => {
         }
         catch (err) {
           console.warn(err);
-          p.lobbySocket.emit("ioError", err);
+          p.lobbyIo.emit("ioError", err);
         }
       }
       else {
-        p.lobbySocket.emit("ioError", `"${prop}" failed to validate.`);
+        p.lobbyIo.emit("ioError", `"${prop}" failed to validate.`);
       }
     }
   });

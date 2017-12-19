@@ -121,6 +121,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
     }
 
     p.users.set(id, user);
+    user.room = p;
   };
 
   const deleteUser = (id) => {
@@ -135,6 +136,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
     }
 
     p.users.delete(id);
+    user.room = undefined;
 
     if (p.users.size === 0) {
       p.lobby.deleteRoom(p.id);
@@ -147,17 +149,17 @@ const Room = (name = "New Room", lobby, ownerId) => {
   };
 
 
-  p.clients.on("connection", (roomSocket) => {
-    const id = `u${roomSocket.conn.id}`,
+  p.clients.on("connection", (roomIo) => {
+    const id = `u${roomIo.conn.id}`,
           user = p.users.get(id);
 
     try {
-      user.joinRoomComplete(roomSocket);
+      user.joinRoomComplete(roomIo);
     }
     catch (err) {
       console.warn(err);
-      roomSocket.emit("ioError", "The user is not in the specified room.");
-      roomSocket.disconnect();
+      roomIo.emit("ioError", "The user is not in the specified room.");
+      roomIo.disconnect();
     }
   });
 
