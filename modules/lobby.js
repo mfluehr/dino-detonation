@@ -23,7 +23,7 @@ const Lobby = (server) => {
       }
     });
 
-    const newRoom = Room(name, p, owner.id);
+    const newRoom = Room(name, self, owner.id);
     rooms.set(newRoom.id, newRoom);
 
     return newRoom;
@@ -34,7 +34,7 @@ const Lobby = (server) => {
       throw "The server can't hold any more users.";
     }
 
-    const newUser = User(lobbySocket, p),
+    const newUser = User(lobbySocket, self),
           lobbyRooms = [],
           lobbyUsers = [];
 
@@ -64,8 +64,7 @@ const Lobby = (server) => {
   };
 
 
-  const p = {
-    get io () { return io; },
+  const self = {
     get clients () { return clients; },
     get rooms () { return rooms; },
     get users () { return users; },
@@ -77,13 +76,14 @@ const Lobby = (server) => {
   };
 
   const io = socket(server),
-        clients = io.of("/lobby"),
+        clients = io,
         maxRooms = 5,
         maxUsers = 40,
         rooms = new Map(),
         users = new Map();
 
   rooms.set = (...args) => {
+    clients.emit("zzz"); //// why needed?
     clients.emit("addRoom", args[1].lobbyData);
     return Map.prototype.set.apply(rooms, args);
   };
@@ -116,7 +116,7 @@ const Lobby = (server) => {
   });
 
 
-  return p;
+  return self;
 };
 
 

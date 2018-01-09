@@ -1,29 +1,23 @@
 "use strict";
 
 
-const RoomBase = (properties, lobbySocket) => {
-  properties.lobbySocket = lobbySocket;
-  return properties;
-};
-
-const Room = (properties, lobbySocket) => {
-  const base = RoomBase(properties, lobbySocket),
-        displayed = new Set(["name", "maxUsers", "numUsers"]);
+const Room = (properties, socket) => {
+  const displayed = new Set(["name", "maxUsers", "numUsers"]);
 
   const els = {
     roomList: document.getElementById("lobby-view-rooms")
   };
 
-  const p = new Proxy(base, {
+  const self = new Proxy(properties, {
     get: (obj, prop) => {
-      if (prop === "base") return base;
+      if (prop === "socket") return socket;
       return obj[prop];
     },
     set: (obj, prop, val) => {
       obj[prop] = val;
 
       if (displayed.has(prop)) {
-        const el = els.roomList.querySelector(`[data-id="${p.id}"] .${prop}`);
+        const el = els.roomList.querySelector(`[data-id="${self.id}"] .${prop}`);
         el.innerText = val;
       }
 
@@ -31,10 +25,10 @@ const Room = (properties, lobbySocket) => {
     }
   });
 
-  return p;
+  return self;
 };
 
-const LocalRoom = (roomIo, base, syncData) => {
+const LocalRoom = (properties, syncData) => {
   const listUser = ({ id, name }) => {
     els.userList.insertAdjacentHTML("beforeend",
         `<li data-id="${id}">` +
@@ -43,6 +37,7 @@ const LocalRoom = (roomIo, base, syncData) => {
   };
 
   const unlistUser = (id) => {
+    console.log("unlist", id);
     const li = els.userList.querySelector(`[data-id=${id}]`);
     li.remove();
   };
@@ -64,7 +59,7 @@ const LocalRoom = (roomIo, base, syncData) => {
       case "moveRight":
       case "moveDown":
       case "moveLeft":
-        p.roomIo.emit("halt");
+        self.socket.emit("halt");
         break;
     }
   };
@@ -76,30 +71,25 @@ const LocalRoom = (roomIo, base, syncData) => {
 
     switch (action[0]) {
       case "dropBomb":
-        p.roomIo.emit("dropBomb");
+        self.socket.emit("dropBomb");
         break;
       case "moveUp":
-        p.roomIo.emit("move", 270);
+        self.socket.emit("move", 270);
         break;
       case "moveRight":
-        p.roomIo.emit("move", 0);
+        self.socket.emit("move", 0);
         break;
     }
   };
 
-  const properties = Object.assign({
-    // roomIo: io.connect(`${app.url}/${base.id}`),
-    roomIo,
-    users: new Map()
-  }, base);
+  properties.users = new Map();
 
   const els = {
     userList: document.getElementById("room-view-users")
   };
 
-  const p = new Proxy(properties, {
+  const self = new Proxy(properties, {
     get: (obj, prop) => {
-      if (prop === "base") return base;
       return obj[prop];
     },
     set: (obj, prop, val) => {
@@ -108,47 +98,49 @@ const LocalRoom = (roomIo, base, syncData) => {
     }
   });
 
-  p.users.set = (...args) => {
+  self.users.set = (...args) => {
     listUser(args[1]);
-    return Map.prototype.set.apply(p.users, args);
+    return Map.prototype.set.apply(self.users, args);
   };
 
-  p.users.clear = (...args) => {
+  self.users.clear = (...args) => {
     while (els.userList.firstChild) {
       els.userList.removeChild(els.userList.firstChild);
     }
-    return Map.prototype.clear.apply(p.users, args);
+    return Map.prototype.clear.apply(self.users, args);
   };
 
-  p.users.delete = (...args) => {
+  self.users.delete = (...args) => {
     unlistUser(args[0]);
-    return Map.prototype.delete.apply(p.users, args);
+    return Map.prototype.delete.apply(self.users, args);
   };
 
 
   syncData.users.forEach((data) => {
-    p.users.set(data.id, data);
+    self.users.set(data.id, data);
   });
 
 
 
 
-  // p.roomIo.on("addUser", (...users) => {
-  //   users.forEach((data) => {
-  //     const user = User(data, p.lobbySocket);
-  //     p.users.set(user.id, user);
-  //   });
-  // });
-  //
-  // p.roomIo.on("deleteUser", (...ids) => {
-  //   ids.forEach((id)  => {
-  //     p.users.delete(id);
-  //   });
-  // });
-  //
-  // p.roomIo.on("ioError", (err) => {
-  //   console.warn(err);
-  // });
+  self.socket.on("addRoomUser", (...users) => {
+    users.forEach((data) => {
+      const user = User(data, self.socket);
+      self.users.set(user.id, user);
+    });
+
+    return;
+  });
+
+  self.socket.on("deleteRoomUser", (...ids) => {
+    ids.forEach((id)  => {
+      self.users.delete(id);
+    });
+  });
+
+  self.socket.on("updateLocalRoom", (data) => {
+    //// console.log("update room:", data);
+  });
 
 
   document.addEventListener("keydown", (e) => {
@@ -170,8 +162,5 @@ const LocalRoom = (roomIo, base, syncData) => {
   });
 
 
-
-
-
-  return p;
+  return self;
 };

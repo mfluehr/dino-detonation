@@ -13,7 +13,7 @@ const App = () => {
     view: undefined
   };
 
-  const p = new Proxy(properties, {
+  const self = new Proxy(properties, {
     get: (obj, prop) => {
       return obj[prop];
     },
@@ -21,17 +21,17 @@ const App = () => {
       obj[prop] = val;
 
       if (prop === "view") {
-        for (let i = 0; i < p.els.views.length; i ++) {
-          p.els.views[i].classList.remove("visible");
+        for (let i = 0; i < self.els.views.length; i ++) {
+          self.els.views[i].classList.remove("visible");
         }
-        p.els[val].classList.add("visible");
+        self.els[val].classList.add("visible");
       }
 
       return true;
     }
   });
 
-  return p;
+  return self;
 };
 
 

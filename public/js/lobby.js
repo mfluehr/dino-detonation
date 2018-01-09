@@ -4,11 +4,11 @@
 const Lobby = () => {
   const addRoom = () => {
     const roomName = els.roomName.value;
-    p.socket.emit("addRoom", roomName);
+    self.socket.emit("addRoom", roomName);
   };
 
   const joinRoom = (id) => {
-    p.socket.emit("joinRoom", id);
+    self.socket.emit("joinRoom", id);
   };
 
   const listRoom = ({ id, name, numUsers, maxUsers }) => {
@@ -30,7 +30,7 @@ const Lobby = () => {
   };
 
   const login = () => {
-    p.user.name = els.userName.value;
+    self.user.name = els.userName.value;
   };
 
   const unlistRoom = (id) => {
@@ -53,8 +53,8 @@ const Lobby = () => {
     userName: document.getElementById("user-name")
   };
 
-  const p = {
-    socket: io.connect(`${app.url}/lobby`),
+  const self = {
+    socket: io.connect(app.url),
     room: undefined,
     rooms: new Map(),
     user: undefined,
@@ -65,100 +65,100 @@ const Lobby = () => {
     get leaveRoom () { return leaveRoom; }
   };
 
-  p.rooms.set = (...args) => {
+  self.rooms.set = (...args) => {
     listRoom(args[1]);
-    return Map.prototype.set.apply(p.rooms, args);
+    return Map.prototype.set.apply(self.rooms, args);
   };
 
-  p.rooms.clear = (...args) => {
+  self.rooms.clear = (...args) => {
     while (els.roomList.firstChild) {
       els.roomList.removeChild(els.roomList.firstChild);
     }
-    return Map.prototype.clear.apply(p.rooms, args);
+    return Map.prototype.clear.apply(self.rooms, args);
   };
 
-  p.rooms.delete = (...args) => {
+  self.rooms.delete = (...args) => {
     unlistRoom(args[0]);
-    return Map.prototype.delete.apply(p.rooms, args);
+    return Map.prototype.delete.apply(self.rooms, args);
   };
 
-  p.users.set = (...args) => {
+  self.users.set = (...args) => {
     listUser(args[1]);
-    return Map.prototype.set.apply(p.users, args);
+    return Map.prototype.set.apply(self.users, args);
   };
 
-  p.users.clear = (...args) => {
+  self.users.clear = (...args) => {
     while (els.userList.firstChild) {
       els.userList.removeChild(els.userList.firstChild);
     }
-    return Map.prototype.clear.apply(p.users, args);
+    return Map.prototype.clear.apply(self.users, args);
   };
 
-  p.users.delete = (...args) => {
+  self.users.delete = (...args) => {
     unlistUser(args[0]);
-    return Map.prototype.delete.apply(p.users, args);
+    return Map.prototype.delete.apply(self.users, args);
   };
 
 
-  p.socket.on("addRoom", (...rooms) => {
+  self.socket.on("addRoom", (...rooms) => {
     rooms.forEach((data)  => {
-      const room = Room(data, p.socket);
-      p.rooms.set(room.id, room);
+      const room = Room(data, self.socket);
+      self.rooms.set(room.id, room);
     });
   });
 
-  p.socket.on("addUser", (...users) => {
+  self.socket.on("addUser", (...users) => {
     users.forEach((data) => {
-      const user = User(data, p.socket);
-      p.users.set(user.id, user);
+      const user = User(data, self.socket);
+      self.users.set(user.id, user);
     });
   });
 
-  p.socket.on("deleteRoom", (...ids) => {
+  self.socket.on("deleteRoom", (...ids) => {
     ids.forEach((id)  => {
-      p.rooms.delete(id);
+      self.rooms.delete(id);
     });
   });
 
-  p.socket.on("deleteUser", (...ids) => {
+  self.socket.on("deleteUser", (...ids) => {
     ids.forEach((id)  => {
-      p.users.delete(id);
+      self.users.delete(id);
     });
   });
 
-  p.socket.on("disconnect", (reason) => {
-    p.rooms.clear();
-    p.users.clear();
-    delete p.user;
+  self.socket.on("disconnect", (reason) => {
+    self.rooms.clear();
+    self.users.clear();
+    delete self.user;
     console.log("Lobby connection lost!");
   });
 
-  p.socket.on("ioError", (err) => {
+  self.socket.on("ioError", (err) => {
     console.warn(err);
   });
 
-  p.socket.on("loadRoom", (syncData) => {
-    p.room = LocalRoom(p.socket, p.rooms.get(syncData.id).base, syncData);
-    p.user.room = p.room;
+  self.socket.on("loadRoom", (syncData) => {
+    self.room = LocalRoom(self.rooms.get(syncData.id), syncData);
+    self.user.room = self.room;
     app.view = "room";
   });
 
-  p.socket.on("loadUser", (id) => {
+  self.socket.on("loadUser", (id) => {
     const el = els.userList.querySelector(`[data-id="${id}"]`);
     el.classList.add("local");
-    p.user = LocalUser(p.socket, p.users.get(id).base);
+    self.user = LocalUser(self.users.get(id));
     app.view = "lobby";
   });
 
-  p.socket.on("updateRoom", (...rooms) => {
+  self.socket.on("updateRoom", (...rooms) => {
     rooms.forEach((data) => {
-      Object.assign(p.rooms.get(data.id), data);
+      Object.assign(self.rooms.get(data.id), data);
     });
   });
 
-  p.socket.on("updateUser", (...users) => {
+  self.socket.on("updateUser", (...users) => {
     users.forEach((data) => {
-      Object.assign(p.users.get(data.id), data);
+      Object.assign(self.users.get(data.id), data);
     });
   });
 
@@ -178,5 +178,5 @@ const Lobby = () => {
   });
 
 
-  return p;
+  return self;
 };

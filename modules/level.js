@@ -40,7 +40,7 @@ const Level = ({
   name,
   room
 }) => {
-  const p = {
+  const self = {
     get reset () { return reset; },
     get addBomb () { return addBomb; },
     get addUser () { return resetUser; },
@@ -63,7 +63,7 @@ const Level = ({
     y = tileY(y);
 
     bomb = Bomb({
-      level: p,
+      level: self,
       x, y,
       userId
     });
@@ -135,7 +135,7 @@ const Level = ({
   };
 
 
-  return p;
+  return self;
 };
 
 module.exports = Level;

@@ -7,49 +7,49 @@ const Level = require("./level"),
 
 const Room = (name = "New Room", lobby, ownerId) => {
   const addUser = (id) => {
-    const user = p.lobby.users.get(id);
+    const user = self.lobby.users.get(id);
 
-    if (p.users.get(id)) {
+    if (self.users.get(id)) {
       throw "The user is already in the specified room.";
     }
     else if (user.room) {
       throw "The user is already in another room.";
     }
-    else if (p.users.size >= p.maxUsers) {
+    else if (self.users.size >= self.maxUsers) {
       throw "The specified room is already full.";
     }
 
-    if (p.level) {
+    if (self.level) {
       //// TODO: dynamic adding of avatars
-      //// p.level.addUser(user);
+      //// self.level.addUser(user);
     }
 
-    p.users.set(id, user);
-    user.room = p;
+    self.users.set(id, user);
+    user.room = self;
   };
 
   const deleteUser = (id) => {
-    const user = p.lobby.users.get(id);
+    const user = self.lobby.users.get(id);
 
-    if (p.level) {
-      p.level.deleteUser(user);
+    if (self.level) {
+      self.level.deleteUser(user);
     }
 
-    if (id === p.ownerId) {
+    if (id === self.ownerId) {
       //// TODO: change owner to next longest user
     }
 
-    p.users.delete(id);
+    self.users.delete(id);
     user.room = undefined;
 
-    if (p.users.size === 0) {
-      p.lobby.deleteRoom(p.id);
+    if (self.users.size === 0) {
+      self.lobby.deleteRoom(self.id);
     }
   };
 
   const startGame = () => {
     console.log("Start game!");
-    p.level = Level(p.roomOptions.levels);
+    self.level = Level(self.roomOptions.levels);
   };
 
 
@@ -76,30 +76,30 @@ const Room = (name = "New Room", lobby, ownerId) => {
 
     get userData () {
       const roomUsers = [];
-      p.users.forEach((user, userId) => {
+      self.users.forEach((user, userId) => {
         roomUsers.push(user.roomData);
       });
       return roomUsers;
     }
   };
 
-  const p = new Proxy(properties, {
+  const self = new Proxy(properties, {
     get: (obj, prop) => {
       if (prop === "lobbyData") {
         return {
-          id: p.id,
-          maxUsers: p.maxUsers,
-          name: p.name,
-          numUsers: p.numUsers,
-          ownerId: p.ownerId
+          id: self.id,
+          maxUsers: self.maxUsers,
+          name: self.name,
+          numUsers: self.numUsers,
+          ownerId: self.ownerId
         };
       }
       else if (prop === "roomData") {
         return {
-          id: p.id,
-          //// level: p.level,
-          //// roomOptions: p.roomOptions,
-          users: p.userData
+          id: self.id,
+          //// level: self.level,
+          //// roomOptions: self.roomOptions,
+          users: self.userData
         };
       }
 
@@ -109,15 +109,15 @@ const Room = (name = "New Room", lobby, ownerId) => {
       if (obj[prop] !== val) {
         obj[prop] = val;
 
-        const data = { id: p.id };
+        const data = { id: self.id };
         data[prop] = val;
 
         if (lobbyData.has(prop)) {
-          p.lobby.clients.emit("updateRoom", data);
+          self.lobby.clients.emit("updateRoom", data);
         }
 
         if (roomData.has(prop)) {
-          p.clients.emit("updateRoom", data);
+          self.clients.emit("updateLocalRoom", data);
         }
       }
 
@@ -125,27 +125,27 @@ const Room = (name = "New Room", lobby, ownerId) => {
     }
   });
 
-  properties.clients = p.lobby.io.to(p.id);
+  properties.clients = self.lobby.clients.in(self.id);
 
   Object.seal(properties);
   Util.freezeProperties(properties, ["id"]);
 
-  p.users.set = (...args) => {
-    Map.prototype.set.apply(p.users, args);
-    p.numUsers = p.users.size;
-    p.clients.emit("addUser", args[1].lobbyData);
-    return p.users;
+  self.users.set = (...args) => {
+    Map.prototype.set.apply(self.users, args);
+    self.numUsers = self.users.size;
+    self.clients.emit("addRoomUser", args[1].lobbyData);
+    return self.users;
   };
 
-  p.users.delete = (...args) => {
-    Map.prototype.delete.apply(p.users, args);
-    p.numUsers = p.users.size;
-    p.clients.emit("deleteUser", args[0]);
-    return p.users;
+  self.users.delete = (...args) => {
+    Map.prototype.delete.apply(self.users, args);
+    self.numUsers = self.users.size;
+    self.clients.emit("deleteRoomUser", args[0]);
+    return self.users;
   };
 
 
-  return p;
+  return self;
 };
 
 module.exports = Room;

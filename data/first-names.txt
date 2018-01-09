@@ -22,7 +22,7 @@ Ned
 Nellie
 Orville
 Owen
-P. Allen
+self. Allen
 Paul
 Pops
 Ruby

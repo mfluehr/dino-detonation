@@ -1,29 +1,23 @@
 "use strict";
 
 
-const UserBase = (properties, lobbySocket) => {
-  properties.lobbySocket = lobbySocket;
-  return properties;
-};
-
-const User = (properties, lobbySocket) => {
-  const base = UserBase(properties, lobbySocket),
-        displayed = new Set(["name"]);
+const User = (properties, socket) => {
+  const displayed = new Set(["name"]);
 
   const els = {
     userList: document.getElementById("lobby-view-users")
   };
 
-  const p = new Proxy(base, {
+  const self = new Proxy(properties, {
     get: (obj, prop) => {
-      if (prop === "base") return base;
+      if (prop === "socket") return socket;
       return obj[prop];
     },
     set: (obj, prop, val) => {
       obj[prop] = val;
 
       if (displayed.has(prop)) {
-        const el =  els.userList.querySelector(`[data-id="${p.id}"] .${prop}`);
+        const el =  els.userList.querySelector(`[data-id="${self.id}"] .${prop}`);
         el.innerText = val;
       }
 
@@ -31,23 +25,21 @@ const User = (properties, lobbySocket) => {
     }
   });
 
-  return p;
+  return self;
 };
 
-const LocalUser = (roomIo, base) => {
-  // const listenToRoom = (roomIo) => {
-  //   roomIo.on("disconnect", (reason) => {
-  //     leaveRoom();
-  //     console.log("Room connection lost!");
-  //   });
-  // };
-
+const LocalUser = (properties) => {
   const leaveRoom = () => {
-    //// p.room.roomIo.emit("leaveRoom", p.id);
-    p.roomIo.emit("leaveRoom");
-    p.users.clear();
-    delete p.room;
+    self.socket.emit("leaveRoom");
+    self.room.users.clear();
+    delete self.room;
     app.view = "lobby";
+
+
+    ////
+    self.socket.off("addRoomUser");
+    self.socket.off("deleteRoomUser");
+    self.socket.off("updateLocalRoom");
   };
 
 
@@ -57,12 +49,7 @@ const LocalUser = (roomIo, base) => {
     leaveRoom: document.getElementById("room-view-leave")
   };
 
-  const properties = Object.assign({
-    roomIo,
-    users: new Map()
-  }, base);
-
-  const p = new Proxy(properties, {
+  const self = new Proxy(properties, {
     get: (obj, prop) => {
       return obj[prop];
     },
@@ -72,7 +59,7 @@ const LocalUser = (roomIo, base) => {
         return true;
       }
       else if (editable.has(prop)) {
-        base.lobbySocket.emit("updateUser", { prop, val });
+        self.socket.emit("updateUser", { prop, val });
         return true;
       }
 
@@ -85,5 +72,5 @@ const LocalUser = (roomIo, base) => {
   });
 
 
-  return p;
+  return self;
 };

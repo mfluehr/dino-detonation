@@ -41,12 +41,17 @@ td {
 }
 
 
+
+.view {
+  border-top: 2px solid #a55;
+}
+
 #lobby-view {
-  display: none;
+  /* display: none; */
 }
 
 #room-view {
-  display: none;
+  /* display: none; */
 }
 
 #game-view {
