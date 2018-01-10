@@ -29,28 +29,28 @@ const Lobby = (server) => {
     return newRoom;
   };
 
-  const addUser = (lobbySocket) => {
+  const addUser = (socket) => {
     if (users.size >= maxUsers) {
       throw "The server can't hold any more users.";
     }
 
-    const newUser = User(lobbySocket, self),
+    const newUser = User(socket, self),
           lobbyRooms = [],
           lobbyUsers = [];
 
     rooms.forEach((room, roomId) => {
       lobbyRooms.push(room.lobbyData);
     });
-    lobbySocket.emit("addRoom", ...lobbyRooms);
+    socket.emit("addRoom", ...lobbyRooms);
 
     users.forEach((user, userId) => {
       lobbyUsers.push(user.lobbyData);
     });
-    lobbySocket.emit("addUser", ...lobbyUsers);
+    socket.emit("addUser", ...lobbyUsers);
 
     users.set(newUser.id, newUser);
-    lobbySocket.emit("updateUser", newUser.privateData);
-    lobbySocket.emit("loadUser", newUser.id);
+    socket.emit("updateUser", newUser.privateData);
+    socket.emit("loadUser", newUser.id);
 
     return newUser;
   };
@@ -104,14 +104,14 @@ const Lobby = (server) => {
   };
 
 
-  clients.on("connection", (lobbySocket) => {
+  clients.on("connection", (socket) => {
     try {
-      addUser(lobbySocket);
+      addUser(socket);
     }
     catch (err) {
       console.warn(err);
-      lobbySocket.emit("ioError", err);
-      lobbySocket.disconnect();
+      socket.emit("ioError", err);
+      socket.disconnect();
     }
   });
 

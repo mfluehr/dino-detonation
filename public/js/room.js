@@ -37,7 +37,6 @@ const LocalRoom = (properties, syncData) => {
   };
 
   const unlistUser = (id) => {
-    console.log("unlist", id);
     const li = els.userList.querySelector(`[data-id=${id}]`);
     li.remove();
   };
