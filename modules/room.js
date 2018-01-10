@@ -102,6 +102,9 @@ const Room = (name = "New Room", lobby, ownerId) => {
           users: self.userData
         };
       }
+      else if (prop === "clients") {
+        return self.lobby.clients.in(self.id);
+      }
 
       return obj[prop];
     },
@@ -125,15 +128,14 @@ const Room = (name = "New Room", lobby, ownerId) => {
     }
   });
 
-  properties.clients = self.lobby.clients.in(self.id);
-
   Object.seal(properties);
   Util.freezeProperties(properties, ["id"]);
 
   self.users.set = (...args) => {
     Map.prototype.set.apply(self.users, args);
     self.numUsers = self.users.size;
-    self.clients.emit("addRoomUser", args[1].lobbyData);
+    self.clients.emit("addRoomUser", args[1].roomData);
+
     return self.users;
   };
 

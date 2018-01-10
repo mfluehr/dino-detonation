@@ -2,7 +2,7 @@
 
 
 const Room = (properties, socket) => {
-  const displayed = new Set(["name", "maxUsers", "numUsers"]);
+  const shownInLobby = new Set(["name", "maxUsers", "numUsers"]);
 
   const els = {
     roomList: document.getElementById("lobby-view-rooms")
@@ -16,7 +16,7 @@ const Room = (properties, socket) => {
     set: (obj, prop, val) => {
       obj[prop] = val;
 
-      if (displayed.has(prop)) {
+      if (shownInLobby.has(prop)) {
         const el = els.roomList.querySelector(`[data-id="${self.id}"] .${prop}`);
         el.innerText = val;
       }
@@ -28,12 +28,20 @@ const Room = (properties, socket) => {
   return self;
 };
 
-const LocalRoom = (properties, syncData) => {
+const LocalRoom = (lobby) => {
   const listUser = ({ id, name }) => {
     els.userList.insertAdjacentHTML("beforeend",
         `<li data-id="${id}">` +
           `<span class="name">${name}</span>` +
         `</li>`);
+  };
+
+  const load = (base, syncData) => {
+    Object.assign(self, base);
+
+    syncData.users.forEach((user) => {
+      self.users.set(user.id, user);
+    });
   };
 
   const unlistUser = (id) => {
@@ -81,10 +89,16 @@ const LocalRoom = (properties, syncData) => {
     }
   };
 
-  properties.users = new Map();
 
   const els = {
     userList: document.getElementById("room-view-users")
+  };
+
+  const properties = {
+    socket: lobby.socket,
+    users: new Map(),
+
+    get load () { return load; }
   };
 
   const self = new Proxy(properties, {
@@ -115,16 +129,9 @@ const LocalRoom = (properties, syncData) => {
   };
 
 
-  syncData.users.forEach((data) => {
-    self.users.set(data.id, data);
-  });
-
-
-
-
   self.socket.on("addRoomUser", (...users) => {
     users.forEach((data) => {
-      const user = User(data, self.socket);
+      const user = lobby.users.get(data.id);
       self.users.set(user.id, user);
     });
 

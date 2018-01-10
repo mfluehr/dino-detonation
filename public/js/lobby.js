@@ -55,15 +55,15 @@ const Lobby = () => {
 
   const self = {
     socket: io.connect(app.url),
-    room: undefined,
     rooms: new Map(),
-    user: undefined,
     users: new Map(),
 
     get addRoom () { return addRoom; },
     get joinRoom () { return joinRoom; },
     get leaveRoom () { return leaveRoom; }
   };
+
+  self.user = LocalUser(self);
 
   self.rooms.set = (...args) => {
     listRoom(args[1]);
@@ -129,7 +129,7 @@ const Lobby = () => {
   self.socket.on("disconnect", (reason) => {
     self.rooms.clear();
     self.users.clear();
-    delete self.user;
+    self.user.leaveRoom();
     console.log("Lobby connection lost!");
   });
 
@@ -138,15 +138,14 @@ const Lobby = () => {
   });
 
   self.socket.on("loadRoom", (syncData) => {
-    self.room = LocalRoom(self.rooms.get(syncData.id), syncData);
-    self.user.room = self.room;
+    self.user.room.load(self.rooms.get(syncData.id), syncData);
     app.view = "room";
   });
 
   self.socket.on("loadUser", (id) => {
     const el = els.userList.querySelector(`[data-id="${id}"]`);
     el.classList.add("local");
-    self.user = LocalUser(self.users.get(id));
+    self.user.load(self.users.get(id), self);
     app.view = "lobby";
   });
 

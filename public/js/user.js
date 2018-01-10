@@ -2,7 +2,7 @@
 
 
 const User = (properties, socket) => {
-  const displayed = new Set(["name"]);
+  const shownInLobby = new Set(["name"]);
 
   const els = {
     userList: document.getElementById("lobby-view-users")
@@ -16,7 +16,7 @@ const User = (properties, socket) => {
     set: (obj, prop, val) => {
       obj[prop] = val;
 
-      if (displayed.has(prop)) {
+      if (shownInLobby.has(prop)) {
         const el =  els.userList.querySelector(`[data-id="${self.id}"] .${prop}`);
         el.innerText = val;
       }
@@ -28,18 +28,15 @@ const User = (properties, socket) => {
   return self;
 };
 
-const LocalUser = (properties) => {
+const LocalUser = (lobby) => {
   const leaveRoom = () => {
     self.socket.emit("leaveRoom");
     self.room.users.clear();
-    delete self.room;
     app.view = "lobby";
+  };
 
-
-    ////
-    self.socket.off("addRoomUser");
-    self.socket.off("deleteRoomUser");
-    self.socket.off("updateLocalRoom");
+  const load = (base) => {
+    Object.assign(properties, base);
   };
 
 
@@ -47,6 +44,14 @@ const LocalUser = (properties) => {
 
   const els = {
     leaveRoom: document.getElementById("room-view-leave")
+  };
+
+  const properties = {
+    room: LocalRoom(lobby),
+    socket: lobby.socket,
+
+    get leaveRoom () { return leaveRoom; },
+    get load () { return load; }
   };
 
   const self = new Proxy(properties, {

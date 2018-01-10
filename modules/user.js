@@ -160,6 +160,7 @@ const User = (socket, lobby) => {
 
   self.socket.on("leaveRoom", () => {
     if (self.room) {
+      self.socket.leave(self.room.id);
       self.room.deleteUser(self.id);
     }
     else {

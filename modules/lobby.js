@@ -83,7 +83,6 @@ const Lobby = (server) => {
         users = new Map();
 
   rooms.set = (...args) => {
-    clients.emit("zzz"); //// why needed?
     clients.emit("addRoom", args[1].lobbyData);
     return Map.prototype.set.apply(rooms, args);
   };
