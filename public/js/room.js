@@ -49,6 +49,12 @@ const LocalRoom = (lobby) => {
     li.remove();
   };
 
+  const unload = () => {
+    self.socket.emit("leaveRoom");
+    self.users.clear();
+    app.view = "lobby";
+  };
+
 
   const actions = {
     " ": ["dropBomb", false],
@@ -98,7 +104,8 @@ const LocalRoom = (lobby) => {
     socket: lobby.socket,
     users: new Map(),
 
-    get load () { return load; }
+    get load () { return load; },
+    get unload () { return unload; }
   };
 
   const self = new Proxy(properties, {
@@ -142,10 +149,6 @@ const LocalRoom = (lobby) => {
     ids.forEach((id)  => {
       self.users.delete(id);
     });
-  });
-
-  self.socket.on("updateLocalRoom", (data) => {
-    //// console.log("update room:", data);
   });
 
 

@@ -2,10 +2,12 @@
 
 
 const User = (properties, socket) => {
-  const shownInLobby = new Set(["name"]);
+  const shownInLobby = new Set(["name"]),
+        shownInRoom = new Set(["name"]);
 
   const els = {
-    userList: document.getElementById("lobby-view-users")
+    lobbyUserList: document.getElementById("lobby-view-users"),
+    roomUserList: document.getElementById("room-view-users")
   };
 
   const self = new Proxy(properties, {
@@ -17,8 +19,14 @@ const User = (properties, socket) => {
       obj[prop] = val;
 
       if (shownInLobby.has(prop)) {
-        const el =  els.userList.querySelector(`[data-id="${self.id}"] .${prop}`);
+        const el = els.lobbyUserList.querySelector(`[data-id="${self.id}"] .${prop}`);
         el.innerText = val;
+      }
+
+      if (shownInRoom.has(prop)) {
+        console.log(prop, val);
+        // const el = els.roomUserList.querySelector(`[data-id="${self.id}"] .${prop}`);
+        // el.innerText = val;
       }
 
       return true;
@@ -30,9 +38,7 @@ const User = (properties, socket) => {
 
 const LocalUser = (lobby) => {
   const leaveRoom = () => {
-    self.socket.emit("leaveRoom");
-    self.room.users.clear();
-    app.view = "lobby";
+    self.room.unload();
   };
 
   const load = (base) => {

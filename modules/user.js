@@ -34,9 +34,6 @@ const User = (socket, lobby) => {
   };
 
 
-  const lobbyData = new Set(["name"]),
-        privateData = new Set(["email"]);
-
   const properties = {
     id: "u" + socket.conn.id,
     avatar: undefined,
@@ -44,38 +41,36 @@ const User = (socket, lobby) => {
     lobby,
     socket,
     name: randomName(),
-    room: undefined
+    room: undefined,
+
+    get lobbyData () {
+      return {
+        id: self.id,
+        name: self.name
+      };
+    },
+    get privateData () {
+      return {
+        id: self.id,
+        email: self.email
+      };
+    },
+    get roomData () {
+      return {
+        id: self.id,
+        name: self.name,
+        //// readyToStart: true
+      };
+    }
   };
 
   const self = new Proxy(properties, {
     get: (obj, prop) => {
-      if (prop === "lobbyData") {
-        return {
-          id: self.id,
-          name: self.name
-        };
-      }
-      else if (prop === "roomData") {
-        return {
-          id: self.id,
-          name: self.name
-        };
-      }
-      else if (prop === "privateData") {
-        return {
-          id: self.id,
-          email: self.email
-        };
-      }
-
       return obj[prop];
     },
     set: (obj, prop, val) => {
       if (obj[prop] !== val) {
         obj[prop] = val;
-
-        const data = { id: self.id };
-        data[prop] = val;
 
         if (prop === "room") {
           if (val) {
@@ -83,11 +78,20 @@ const User = (socket, lobby) => {
             self.socket.join(self.room.id);
           }
         }
-        else if (privateData.has(prop)) {
-          self.socket.emit("updateUser", data);
-        }
-        else if (lobbyData.has(prop)) {
-          self.lobby.clients.emit("updateUser", data);
+        else if (prop !== "id") {
+          const data = { id: self.id };
+          data[prop] = val;
+
+          if (prop in self.privateData) {
+            self.socket.emit("updateUser", data);
+          }
+          else if (prop in self.lobbyData) {
+            self.lobby.clients.emit("updateUser", data);
+          }
+          else if (self.room && prop in self.roomData) {
+            //// TODO: how to update only (correct) room?
+            self.room.clients.emit("updateUser", data);
+          }
         }
       }
 
@@ -180,7 +184,7 @@ const User = (socket, lobby) => {
   self.socket.on("updateUser", ({ prop, val }) => {
     prop = sanitizer.toString(prop);
 
-    if (lobbyData.has(prop) &&
+    if (prop in self.lobbyData &&
         Object.getOwnPropertyDescriptor(self, prop).writable) {
       const san = userSanitizer[prop];
 

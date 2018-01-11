@@ -43,6 +43,12 @@ const Lobby = () => {
     li.remove();
   };
 
+  const unload = () => {
+    self.rooms.clear();
+    self.users.clear();
+    self.user.leaveRoom();
+  };
+
 
   const els = {
     createRoom: document.getElementById("create-room"),
@@ -56,11 +62,7 @@ const Lobby = () => {
   const self = {
     socket: io.connect(app.url),
     rooms: new Map(),
-    users: new Map(),
-
-    get addRoom () { return addRoom; },
-    get joinRoom () { return joinRoom; },
-    get leaveRoom () { return leaveRoom; }
+    users: new Map()
   };
 
   self.user = LocalUser(self);
@@ -127,9 +129,7 @@ const Lobby = () => {
   });
 
   self.socket.on("disconnect", (reason) => {
-    self.rooms.clear();
-    self.users.clear();
-    self.user.leaveRoom();
+    unload();
     console.log("Lobby connection lost!");
   });
 

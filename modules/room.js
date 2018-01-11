@@ -53,11 +53,6 @@ const Room = (name = "New Room", lobby, ownerId) => {
   };
 
 
-  const lobbyData = new Set(
-      ["maxUsers", "name", "numUsers"]);
-  const roomData = new Set(
-      ["maxUsers", "name", "numUsers", "ownerId"]);
-
   const properties = {
     id: "r" + Date.now() + Math.random(),
     level: undefined,
@@ -73,8 +68,27 @@ const Room = (name = "New Room", lobby, ownerId) => {
     get deleteUser () { return deleteUser; },
     get startGame () { return startGame; },
 
-
-    get userData () {
+    get clients () {
+      return self.lobby.clients.in(self.id);
+    },
+    get lobbyData () {
+      return {
+        id: self.id,
+        maxUsers: self.maxUsers,
+        name: self.name,
+        numUsers: self.numUsers
+      };
+    },
+    get roomData () {
+      return {
+        id: self.id,
+        //// level: self.level,
+        ownerId: self.ownerId,
+        //// roomOptions: self.roomOptions,
+        users: self.roomUsersData
+      };
+    },
+    get roomUsersData () {
       const roomUsers = [];
       self.users.forEach((user, userId) => {
         roomUsers.push(user.roomData);
@@ -85,42 +99,22 @@ const Room = (name = "New Room", lobby, ownerId) => {
 
   const self = new Proxy(properties, {
     get: (obj, prop) => {
-      if (prop === "lobbyData") {
-        return {
-          id: self.id,
-          maxUsers: self.maxUsers,
-          name: self.name,
-          numUsers: self.numUsers,
-          ownerId: self.ownerId
-        };
-      }
-      else if (prop === "roomData") {
-        return {
-          id: self.id,
-          //// level: self.level,
-          //// roomOptions: self.roomOptions,
-          users: self.userData
-        };
-      }
-      else if (prop === "clients") {
-        return self.lobby.clients.in(self.id);
-      }
-
       return obj[prop];
     },
     set: (obj, prop, val) => {
       if (obj[prop] !== val) {
         obj[prop] = val;
 
-        const data = { id: self.id };
-        data[prop] = val;
+        if (prop !== "id") {
+          const data = { id: self.id };
+          data[prop] = val;
 
-        if (lobbyData.has(prop)) {
-          self.lobby.clients.emit("updateRoom", data);
-        }
-
-        if (roomData.has(prop)) {
-          self.clients.emit("updateLocalRoom", data);
+          if (prop in self.lobbyData) {
+            self.lobby.clients.emit("updateRoom", data);
+          }
+          else if (prop in self.roomData) {
+            self.clients.emit("updateRoom", data);
+          }
         }
       }
 
