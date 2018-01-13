@@ -11,7 +11,7 @@ const Lobby = () => {
     self.socket.emit("joinRoom", id);
   };
 
-  const listRoom = ({ id, name, numUsers, maxUsers }) => {
+  const listRoom = (id, { name, numUsers, maxUsers }) => {
     els.roomList.insertAdjacentHTML("beforeend",
         `<tr data-id="${id}">` +
           `<td><a class="name" href="#" data-id="${id}">${name}</a></td>` +
@@ -22,7 +22,7 @@ const Lobby = () => {
         `</tr>`);
   };
 
-  const listUser = ({ id, name }) => {
+  const listUser = (id, { name }) => {
     els.userList.insertAdjacentHTML("beforeend",
         `<li data-id="${id}">` +
           `<span class="name">${name}</span>` +
@@ -30,7 +30,7 @@ const Lobby = () => {
   };
 
   const login = () => {
-    self.user.name = els.userName.value;
+    self.personalUser.name = els.userName.value;
   };
 
   const unlistRoom = (id) => {
@@ -46,7 +46,25 @@ const Lobby = () => {
   const unload = () => {
     self.rooms.clear();
     self.users.clear();
-    self.user.leaveRoom();
+    self.personalUser.room.leaveRoom();
+  };
+
+  const updateRoom = (room, prop) => {
+    const shownInLobby = new Set(["name", "maxUsers", "numUsers"]);
+
+    if (shownInLobby.has(prop)) {
+      const el = els.roomList.querySelector(`[data-id="${room.id}"] .${prop}`);
+      el.innerText = room[prop];
+    }
+  };
+
+  const updateUser = (user, prop) => {
+    const shownInLobby = new Set(["name"]);
+
+    if (shownInLobby.has(prop)) {
+      const el = els.userList.querySelector(`[data-id="${user.id}"] .${prop}`);
+      el.innerText = user[prop];
+    }
   };
 
 
@@ -62,13 +80,16 @@ const Lobby = () => {
   const self = {
     socket: io.connect(app.url),
     rooms: new Map(),
-    users: new Map()
+    users: new Map(),
+
+    get updateRoom () { return updateRoom; },
+    get updateUser () { return updateUser; }
   };
 
-  self.user = LocalUser(self);
+  self.personalUser = PersonalUser(self);
 
   self.rooms.set = (...args) => {
-    listRoom(args[1]);
+    listRoom(args[0], args[1]);
     return Map.prototype.set.apply(self.rooms, args);
   };
 
@@ -85,7 +106,7 @@ const Lobby = () => {
   };
 
   self.users.set = (...args) => {
-    listUser(args[1]);
+    listUser(args[0], args[1]);
     return Map.prototype.set.apply(self.users, args);
   };
 
@@ -104,15 +125,15 @@ const Lobby = () => {
 
   self.socket.on("addRoom", (...rooms) => {
     rooms.forEach((data)  => {
-      const room = Room(data, self.socket);
-      self.rooms.set(room.id, room);
+      const room = Room(data.props, self);
+      self.rooms.set(data.id, room);
     });
   });
 
   self.socket.on("addUser", (...users) => {
     users.forEach((data) => {
-      const user = User(data, self.socket);
-      self.users.set(user.id, user);
+      const user = User(data.props, self);
+      self.users.set(data.id, user);
     });
   });
 
@@ -138,26 +159,28 @@ const Lobby = () => {
   });
 
   self.socket.on("loadRoom", (syncData) => {
-    self.user.room.load(self.rooms.get(syncData.id), syncData);
+    self.personalUser.room.load(self.rooms.get(syncData.id), syncData);
     app.view = "room";
   });
 
   self.socket.on("loadUser", (id) => {
     const el = els.userList.querySelector(`[data-id="${id}"]`);
-    el.classList.add("local");
-    self.user.load(self.users.get(id), self);
+    el.classList.add("personal");
+    self.personalUser.load(self.users.get(id));
     app.view = "lobby";
   });
 
   self.socket.on("updateRoom", (...rooms) => {
     rooms.forEach((data) => {
-      Object.assign(self.rooms.get(data.id), data);
+      Object.assign(self.rooms.get(data.id), data.props);
     });
   });
 
   self.socket.on("updateUser", (...users) => {
     users.forEach((data) => {
-      Object.assign(self.users.get(data.id), data);
+      Object.assign(self.users.get(data.id), data.props);
+
+      //// updateUser(self, prop);
     });
   });
 

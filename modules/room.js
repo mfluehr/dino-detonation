@@ -74,21 +74,33 @@ const Room = (name = "New Room", lobby, ownerId) => {
     get lobbyData () {
       return {
         id: self.id,
-        maxUsers: self.maxUsers,
-        name: self.name,
-        numUsers: self.numUsers
+        props: {
+          id: self.id,
+          maxUsers: self.maxUsers,
+          name: self.name,
+          numUsers: self.numUsers
+        }
       };
     },
     get roomData () {
       return {
         id: self.id,
-        //// level: self.level,
-        ownerId: self.ownerId,
-        //// roomOptions: self.roomOptions,
-        users: self.roomUsersData
+        props: {
+          name: self.name,
+          ownerId: self.ownerId
+        }
       };
     },
-    get roomUsersData () {
+    get syncData () {
+      return {
+        id: self.id,
+        props: self.roomData,
+        //// level: self.level,
+        //// roomOptions: self.roomOptions,
+        users: self.userData
+      };
+    },
+    get userData () {
       const roomUsers = [];
       self.users.forEach((user, userId) => {
         roomUsers.push(user.roomData);
@@ -106,14 +118,18 @@ const Room = (name = "New Room", lobby, ownerId) => {
         obj[prop] = val;
 
         if (prop !== "id") {
-          const data = { id: self.id };
-          data[prop] = val;
+          const data = {
+            id: self.id,
+            props: {}
+          };
 
-          if (prop in self.lobbyData) {
+          data.props[prop] = val;
+
+          if (prop in self.lobbyData.props) {
             self.lobby.clients.emit("updateRoom", data);
           }
-          else if (prop in self.roomData) {
-            self.clients.emit("updateRoom", data);
+          else if (prop in self.roomData.props) {
+            self.clients.emit("updateLocalRoom", data);
           }
         }
       }
@@ -128,7 +144,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
   self.users.set = (...args) => {
     Map.prototype.set.apply(self.users, args);
     self.numUsers = self.users.size;
-    self.clients.emit("addRoomUser", args[1].roomData);
+    self.clients.emit("addLocalUser", args[1].roomData);
 
     return self.users;
   };
@@ -136,7 +152,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
   self.users.delete = (...args) => {
     Map.prototype.delete.apply(self.users, args);
     self.numUsers = self.users.size;
-    self.clients.emit("deleteRoomUser", args[0]);
+    self.clients.emit("deleteLocalUser", args[0]);
     return self.users;
   };
 

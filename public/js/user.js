@@ -1,33 +1,17 @@
 "use strict";
 
 
-const User = (properties, socket) => {
-  const shownInLobby = new Set(["name"]),
-        shownInRoom = new Set(["name"]);
-
-  const els = {
-    lobbyUserList: document.getElementById("lobby-view-users"),
-    roomUserList: document.getElementById("room-view-users")
-  };
-
+const User = (properties, lobby) => {
   const self = new Proxy(properties, {
     get: (obj, prop) => {
-      if (prop === "socket") return socket;
       return obj[prop];
     },
     set: (obj, prop, val) => {
       obj[prop] = val;
 
-      if (shownInLobby.has(prop)) {
-        const el = els.lobbyUserList.querySelector(`[data-id="${self.id}"] .${prop}`);
-        el.innerText = val;
-      }
-
-      if (shownInRoom.has(prop)) {
-        console.log(prop, val);
-        // const el = els.roomUserList.querySelector(`[data-id="${self.id}"] .${prop}`);
-        // el.innerText = val;
-      }
+      console.log("down", val);
+      lobby.updateUser(self, prop);
+      // lobby.personalUser.room.updateUser(self, prop);
 
       return true;
     }
@@ -36,50 +20,37 @@ const User = (properties, socket) => {
   return self;
 };
 
-const LocalUser = (lobby) => {
-  const leaveRoom = () => {
-    self.room.unload();
-  };
-
+const PersonalUser = (lobby) => {
   const load = (base) => {
-    Object.assign(properties, base);
+    properties.base = base;
   };
 
 
   const editable = new Set(["email", "name"]);
 
-  const els = {
-    leaveRoom: document.getElementById("room-view-leave")
-  };
-
   const properties = {
-    room: LocalRoom(lobby),
-    socket: lobby.socket,
+    base: {},
+    room: PersonalRoom(lobby),
 
-    get leaveRoom () { return leaveRoom; },
     get load () { return load; }
   };
 
   const self = new Proxy(properties, {
     get: (obj, prop) => {
+      if (prop in obj.base) {
+        return obj.base[prop];
+      }
+
       return obj[prop];
     },
     set: (obj, prop, val) => {
-      if (prop === "room") {
-        obj[prop] = val;
-        return true;
-      }
-      else if (editable.has(prop)) {
-        self.socket.emit("updateUser", { prop, val });
+      if (editable.has(prop)) {
+        lobby.socket.emit("updateUser", { prop, val });
         return true;
       }
 
       return false;
     }
-  });
-
-  els.leaveRoom.addEventListener("click", (e) => {
-    leaveRoom();
   });
 
 

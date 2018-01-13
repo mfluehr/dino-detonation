@@ -46,20 +46,27 @@ const User = (socket, lobby) => {
     get lobbyData () {
       return {
         id: self.id,
-        name: self.name
+        props: {
+          id: self.id,
+          name: self.name
+        }
       };
     },
-    get privateData () {
+    get personalData () {
       return {
         id: self.id,
-        email: self.email
+        props: {
+          email: self.email
+        }
       };
     },
     get roomData () {
       return {
         id: self.id,
-        name: self.name,
-        //// readyToStart: true
+        props: {
+          name: self.name,
+          //// readyToStart: true
+        }
       };
     }
   };
@@ -74,23 +81,29 @@ const User = (socket, lobby) => {
 
         if (prop === "room") {
           if (val) {
-            self.socket.emit("loadRoom", self.room.roomData);
+            self.socket.emit("loadRoom", self.room.syncData);
             self.socket.join(self.room.id);
           }
         }
         else if (prop !== "id") {
-          const data = { id: self.id };
-          data[prop] = val;
+          const data = {
+            id: self.id,
+            props: {}
+          };
 
-          if (prop in self.privateData) {
+          data.props[prop] = val;
+
+          if (prop in self.personalData.props) {
             self.socket.emit("updateUser", data);
           }
-          else if (prop in self.lobbyData) {
-            self.lobby.clients.emit("updateUser", data);
-          }
-          else if (self.room && prop in self.roomData) {
-            //// TODO: how to update only (correct) room?
-            self.room.clients.emit("updateUser", data);
+          else {
+            if (prop in self.lobbyData.props) {
+              self.lobby.clients.emit("updateUser", data);
+            }
+
+            if (self.room && prop in self.roomData.props) {
+              self.room.clients.emit("updateLocalUser", data);
+            }
           }
         }
       }
@@ -184,7 +197,7 @@ const User = (socket, lobby) => {
   self.socket.on("updateUser", ({ prop, val }) => {
     prop = sanitizer.toString(prop);
 
-    if (prop in self.lobbyData &&
+    if (prop in self.lobbyData.props &&
         Object.getOwnPropertyDescriptor(self, prop).writable) {
       const san = userSanitizer[prop];
 

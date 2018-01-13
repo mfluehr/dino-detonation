@@ -1,26 +1,15 @@
 "use strict";
 
 
-const Room = (properties, socket) => {
-  const shownInLobby = new Set(["name", "maxUsers", "numUsers"]);
-
-  const els = {
-    roomList: document.getElementById("lobby-view-rooms")
-  };
-
+const Room = (properties, lobby) => {
   const self = new Proxy(properties, {
     get: (obj, prop) => {
-      if (prop === "socket") return socket;
       return obj[prop];
     },
     set: (obj, prop, val) => {
       obj[prop] = val;
-
-      if (shownInLobby.has(prop)) {
-        const el = els.roomList.querySelector(`[data-id="${self.id}"] .${prop}`);
-        el.innerText = val;
-      }
-
+      lobby.updateRoom(self, prop);
+      //// self.updateRoom(self, prop);
       return true;
     }
   });
@@ -28,7 +17,11 @@ const Room = (properties, socket) => {
   return self;
 };
 
-const LocalRoom = (lobby) => {
+const PersonalRoom = (lobby) => {
+  const leaveRoom = () => {
+    unload();
+  };
+
   const listUser = ({ id, name }) => {
     els.userList.insertAdjacentHTML("beforeend",
         `<li data-id="${id}">` +
@@ -36,11 +29,14 @@ const LocalRoom = (lobby) => {
         `</li>`);
   };
 
-  const load = (base, syncData) => {
-    Object.assign(self, base);
+  const load = (base, data) => {
+    properties.base = base;
 
-    syncData.users.forEach((user) => {
-      self.users.set(user.id, user);
+    //// TODO: deal with other sync data
+    // console.log(data.props);
+
+    data.users.forEach((user) => {
+      self.users.set(user.id, user.props);
     });
   };
 
@@ -53,6 +49,15 @@ const LocalRoom = (lobby) => {
     self.socket.emit("leaveRoom");
     self.users.clear();
     app.view = "lobby";
+  };
+
+  const updateUser = (user, prop) => {
+    const shownInRoom = new Set(["name"]);
+
+    if (shownInRoom.has(prop)) {
+      const el = els.userList.querySelector(`[data-id="${user.id}"] .${prop}`);
+      el.innerText = user[prop];
+    }
   };
 
 
@@ -97,19 +102,25 @@ const LocalRoom = (lobby) => {
 
 
   const els = {
+    leaveRoom: document.getElementById("room-view-leave"),
     userList: document.getElementById("room-view-users")
   };
 
   const properties = {
+    base: {},
     socket: lobby.socket,
     users: new Map(),
 
-    get load () { return load; },
-    get unload () { return unload; }
+    get leaveRoom () { return leaveRoom; },
+    get load () { return load; }
   };
 
   const self = new Proxy(properties, {
     get: (obj, prop) => {
+      if (prop in obj.base) {
+        return obj.base[prop];
+      }
+
       return obj[prop];
     },
     set: (obj, prop, val) => {
@@ -136,7 +147,7 @@ const LocalRoom = (lobby) => {
   };
 
 
-  self.socket.on("addRoomUser", (...users) => {
+  self.socket.on("addLocalUser", (...users) => {
     users.forEach((data) => {
       const user = lobby.users.get(data.id);
       self.users.set(user.id, user);
@@ -145,10 +156,18 @@ const LocalRoom = (lobby) => {
     return;
   });
 
-  self.socket.on("deleteRoomUser", (...ids) => {
+  self.socket.on("deleteLocalUser", (...ids) => {
     ids.forEach((id)  => {
       self.users.delete(id);
     });
+  });
+
+  self.socket.on("updateLocalUser", (...users) => {
+    // users.forEach((data) => {
+    //   Object.assign(self.users.get(data.id), data);
+    // });
+
+    //// updateUser(self, prop);
   });
 
 
@@ -159,7 +178,7 @@ const LocalRoom = (lobby) => {
       startAction(action);
     }
 
-    ////client.avatar.move(angle);
+    //// client.avatar.move(angle);
   });
 
   document.addEventListener("keyup", (e) => {
@@ -168,6 +187,10 @@ const LocalRoom = (lobby) => {
     if (action) {
       endAction(action);
     }
+  });
+
+  els.leaveRoom.addEventListener("click", (e) => {
+    leaveRoom();
   });
 
 

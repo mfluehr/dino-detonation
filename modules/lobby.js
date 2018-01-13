@@ -49,7 +49,7 @@ const Lobby = (server) => {
     socket.emit("addUser", ...lobbyUsers);
 
     users.set(newUser.id, newUser);
-    socket.emit("updateUser", newUser.privateData);
+    socket.emit("updateUser", newUser.personalData);
     socket.emit("loadUser", newUser.id);
 
     return newUser;
