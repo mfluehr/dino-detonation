@@ -64,6 +64,7 @@ const User = (socket, lobby) => {
       return {
         id: self.id,
         props: {
+          id: self.id,
           name: self.name,
           //// readyToStart: true
         }
@@ -72,16 +73,13 @@ const User = (socket, lobby) => {
   };
 
   const self = new Proxy(properties, {
-    get: (obj, prop) => {
-      return obj[prop];
-    },
     set: (obj, prop, val) => {
       if (obj[prop] !== val) {
         obj[prop] = val;
 
         if (prop === "room") {
           if (val) {
-            self.socket.emit("loadRoom", self.room.syncData);
+            self.socket.emit("loadLocalRoom", self.room.syncData);
             self.socket.join(self.room.id);
           }
         }
@@ -94,11 +92,11 @@ const User = (socket, lobby) => {
           data.props[prop] = val;
 
           if (prop in self.personalData.props) {
-            self.socket.emit("updateUser", data);
+            self.socket.emit("updateLobbyUser", data);
           }
           else {
             if (prop in self.lobbyData.props) {
-              self.lobby.clients.emit("updateUser", data);
+              self.lobby.clients.emit("updateLobbyUser", data);
             }
 
             if (self.room && prop in self.roomData.props) {

@@ -126,14 +126,14 @@ const Lobby = () => {
   self.socket.on("addRoom", (...rooms) => {
     rooms.forEach((data)  => {
       const room = Room(data.props, self);
-      self.rooms.set(data.id, room);
+      self.rooms.set(room.id, room);
     });
   });
 
   self.socket.on("addUser", (...users) => {
     users.forEach((data) => {
       const user = User(data.props, self);
-      self.users.set(data.id, user);
+      self.users.set(user.id, user);
     });
   });
 
@@ -158,29 +158,15 @@ const Lobby = () => {
     console.warn(err);
   });
 
-  self.socket.on("loadRoom", (syncData) => {
-    self.personalUser.room.load(self.rooms.get(syncData.id), syncData);
-    app.view = "room";
-  });
-
-  self.socket.on("loadUser", (id) => {
-    const el = els.userList.querySelector(`[data-id="${id}"]`);
-    el.classList.add("personal");
-    self.personalUser.load(self.users.get(id));
-    app.view = "lobby";
-  });
-
-  self.socket.on("updateRoom", (...rooms) => {
+  self.socket.on("updateLobbyRoom", (...rooms) => {
     rooms.forEach((data) => {
       Object.assign(self.rooms.get(data.id), data.props);
     });
   });
 
-  self.socket.on("updateUser", (...users) => {
+  self.socket.on("updateLobbyUser", (...users) => {
     users.forEach((data) => {
       Object.assign(self.users.get(data.id), data.props);
-
-      //// updateUser(self, prop);
     });
   });
 

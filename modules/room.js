@@ -86,6 +86,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
       return {
         id: self.id,
         props: {
+          id: self.id,
           name: self.name,
           ownerId: self.ownerId
         }
@@ -110,9 +111,6 @@ const Room = (name = "New Room", lobby, ownerId) => {
   };
 
   const self = new Proxy(properties, {
-    get: (obj, prop) => {
-      return obj[prop];
-    },
     set: (obj, prop, val) => {
       if (obj[prop] !== val) {
         obj[prop] = val;
@@ -126,11 +124,12 @@ const Room = (name = "New Room", lobby, ownerId) => {
           data.props[prop] = val;
 
           if (prop in self.lobbyData.props) {
-            self.lobby.clients.emit("updateRoom", data);
+            self.lobby.clients.emit("updateLobbyRoom", data);
           }
-          else if (prop in self.roomData.props) {
-            self.clients.emit("updateLocalRoom", data);
-          }
+
+          //// if (prop in self.roomData.props) {
+          //   self.clients.emit("updateLocalRoom", data);
+          // }
         }
       }
 
