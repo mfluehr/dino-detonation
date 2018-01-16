@@ -10,7 +10,7 @@ body {
 }
 
 a {
-  color: #de3;
+  color: #3ed;
 }
 
 th,
@@ -31,16 +31,17 @@ td {
   flex-grow: 1;
 }
 
-.personal {
-  color: #ff5;
-  font-weight: bold;
-}
-
 .visible {
   display: block !important;
 }
 
 
+
+
+.personal {
+  color: #ff5;
+  font-weight: bold;
+}
 
 .view {
   border-top: 2px solid #a55;
@@ -53,6 +54,9 @@ td {
 #room-view {
   /* display: none; */
 }
+  .owner {
+    font-style: italic;
+  }
 
 #game-view {
   display: none;

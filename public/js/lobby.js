@@ -158,6 +158,11 @@ const Lobby = () => {
     console.warn(err);
   });
 
+  self.socket.on("loadPersonalUser", (id) => {
+    const el = els.userList.querySelector(`[data-id="${id}"]`);
+    el.classList.add("personal");
+  });
+
   self.socket.on("updateLobbyRoom", (...rooms) => {
     rooms.forEach((data) => {
       Object.assign(self.rooms.get(data.id), data.props);

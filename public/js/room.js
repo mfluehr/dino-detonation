@@ -13,7 +13,7 @@ const Room = (properties, lobby) => {
   return self;
 };
 
-const PersonalRoom = (lobby) => {
+const LocalRoom = (lobby) => {
   const addUser = (id, props) => {
     const local = LocalUser(lobby.users.get(id), lobby);
     self.users.set(local.id, local);
@@ -34,12 +34,14 @@ const PersonalRoom = (lobby) => {
   const load = (base, data) => {
     properties.base = base;
 
-    //// TODO: deal with other sync data
-    // console.log(data.props);
-
     data.users.forEach((user) => {
       addUser(user.id, user.props);
     });
+
+    Object.assign(self, data.props);
+
+    const el = els.userList.querySelector(`[data-id="${lobby.personalUser.base.id}"]`);
+    el.classList.add("personal");
   };
 
   const unlistUser = (id) => {
@@ -80,6 +82,12 @@ const PersonalRoom = (lobby) => {
   const self = new Proxy(properties, {
     set: (obj, prop, val) => {
       obj[prop] = val;
+
+      if (prop === "ownerId") {
+        const el = els.userList.querySelector(`[data-id="${val}"]`);
+        el.classList.add("owner");
+      }
+
       return true;
     }
   });
@@ -117,6 +125,10 @@ const PersonalRoom = (lobby) => {
   self.socket.on("loadLocalRoom", (data) => {
     load(lobby.rooms.get(data.id), data);
     app.view = "room";
+  });
+
+  self.socket.on("updateLocalRoom", (data) => {
+    Object.assign(self, data.props);
   });
 
   self.socket.on("updateLocalUser", (...users) => {

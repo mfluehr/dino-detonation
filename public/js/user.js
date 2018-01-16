@@ -37,7 +37,7 @@ const PersonalUser = (lobby) => {
 
   const properties = {
     base: {},
-    room: PersonalRoom(lobby),
+    room: LocalRoom(lobby),
     socket: lobby.socket
   };
 
@@ -53,9 +53,7 @@ const PersonalUser = (lobby) => {
   });
 
 
-  self.socket.on("loadLocalUser", (id) => {
-    //// const el = els.userList.querySelector(`[data-id="${id}"]`);
-    // el.classList.add("personal");
+  self.socket.on("loadPersonalUser", (id) => {
     load(lobby.users.get(id));
     app.view = "lobby";
   });

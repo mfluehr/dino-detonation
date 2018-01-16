@@ -195,7 +195,7 @@ const User = (socket, lobby) => {
   self.socket.on("updateUser", ({ prop, val }) => {
     prop = sanitizer.toString(prop);
 
-    if (prop in self.lobbyData.props &&
+    if (Object.getOwnPropertyDescriptor(self, prop) &&
         Object.getOwnPropertyDescriptor(self, prop).writable) {
       const san = userSanitizer[prop];
 
@@ -212,6 +212,9 @@ const User = (socket, lobby) => {
       else {
         self.socket.emit("ioError", `"${prop}" failed to validate.`);
       }
+    }
+    else {
+      self.socket.emit("ioError", `"${prop}" is not editable.`);
     }
   });
 

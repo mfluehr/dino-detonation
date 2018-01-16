@@ -35,15 +35,15 @@ const Room = (name = "New Room", lobby, ownerId) => {
       self.level.deleteUser(user);
     }
 
-    if (id === self.ownerId) {
-      //// TODO: change owner to next longest user
-    }
-
     self.users.delete(id);
     user.room = undefined;
 
     if (self.users.size === 0) {
       self.lobby.deleteRoom(self.id);
+    }
+    else if (id === self.ownerId) {
+      const it = self.users.keys();
+      self.ownerId = it.next().value;
     }
   };
 
@@ -95,7 +95,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
     get syncData () {
       return {
         id: self.id,
-        props: self.roomData,
+        props: self.roomData.props,
         //// level: self.level,
         //// roomOptions: self.roomOptions,
         users: self.userData
@@ -127,9 +127,9 @@ const Room = (name = "New Room", lobby, ownerId) => {
             self.lobby.clients.emit("updateLobbyRoom", data);
           }
 
-          //// if (prop in self.roomData.props) {
-          //   self.clients.emit("updateLocalRoom", data);
-          // }
+          if (prop in self.roomData.props) {
+            self.clients.emit("updateLocalRoom", data);
+          }
         }
       }
 

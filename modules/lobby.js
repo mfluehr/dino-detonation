@@ -50,7 +50,7 @@ const Lobby = (server) => {
 
     users.set(newUser.id, newUser);
     socket.emit("updateLobbyUser", newUser.personalData);
-    socket.emit("loadLocalUser", newUser.id);
+    socket.emit("loadPersonalUser", newUser.id);
 
     return newUser;
   };
