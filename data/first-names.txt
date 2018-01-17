@@ -22,7 +22,6 @@ Ned
 Nellie
 Orville
 Owen
-self. Allen
 Paul
 Pops
 Ruby

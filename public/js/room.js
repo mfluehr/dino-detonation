@@ -24,6 +24,39 @@ const LocalRoom = (lobby) => {
     unload();
   };
 
+  const listen = () => {
+    self.socket.on("addLocalUser", (...users) => {
+      users.forEach((user) => {
+        addUser(user.id, user.props);
+      });
+    });
+
+    self.socket.on("deleteLocalUser", (...ids) => {
+      ids.forEach((id)  => {
+        self.users.delete(id);
+      });
+    });
+
+    self.socket.on("loadLocalRoom", (data) => {
+      load(lobby.rooms.get(data.id), data);
+      app.view = "room";
+    });
+
+    self.socket.on("updateLocalRoom", (data) => {
+      Object.assign(self, data.props);
+    });
+
+    self.socket.on("updateLocalUser", (...users) => {
+      users.forEach((data) => {
+        Object.assign(self.users.get(data.id), data.props);
+      });
+    });
+
+    els.leaveRoom.addEventListener("click", (e) => {
+      leaveRoom();
+    });
+  };
+
   const listUser = ({ id, name }) => {
     els.userList.insertAdjacentHTML("beforeend",
         `<li data-id="${id}">` +
@@ -110,36 +143,7 @@ const LocalRoom = (lobby) => {
   };
 
 
-  self.socket.on("addLocalUser", (...users) => {
-    users.forEach((user) => {
-      addUser(user.id, user.props);
-    });
-  });
-
-  self.socket.on("deleteLocalUser", (...ids) => {
-    ids.forEach((id)  => {
-      self.users.delete(id);
-    });
-  });
-
-  self.socket.on("loadLocalRoom", (data) => {
-    load(lobby.rooms.get(data.id), data);
-    app.view = "room";
-  });
-
-  self.socket.on("updateLocalRoom", (data) => {
-    Object.assign(self, data.props);
-  });
-
-  self.socket.on("updateLocalUser", (...users) => {
-    users.forEach((data) => {
-      Object.assign(self.users.get(data.id), data.props);
-    });
-  });
-
-
-
-
+  listen();
 
 
 
@@ -201,10 +205,6 @@ const LocalRoom = (lobby) => {
     if (action) {
       endAction(action);
     }
-  });
-
-  els.leaveRoom.addEventListener("click", (e) => {
-    leaveRoom();
   });
 
 

@@ -134,21 +134,12 @@ const User = (socket, lobby) => {
   };
 
 
-
-
-
-  self.socket.on("dropBomb", () => {
-    dropBomb();
-  });
-
-  self.socket.on("halt", () => {
-    halt();
-  });
-
-
-
   self.socket.on("addRoom", (name) => {
     name = sanitizer.toString(name, 20);
+
+    if (!name) {
+      name = self.name + "'s room";
+    }
 
     try {
       const room = self.lobby.addRoom(name, self);
@@ -217,6 +208,19 @@ const User = (socket, lobby) => {
       self.socket.emit("ioError", `"${prop}" is not editable.`);
     }
   });
+
+
+
+
+  self.socket.on("dropBomb", () => {
+    dropBomb();
+  });
+
+  self.socket.on("halt", () => {
+    halt();
+  });
+
+
 
 
   return self;

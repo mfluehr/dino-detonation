@@ -1,5 +1,5 @@
 Adverse
-Applebutter
+Applet
 Bluff
 Bugeater
 Chilton
@@ -25,10 +25,10 @@ Noggin
 Overdraw
 Owlet
 Pepper
-Quickdraw
+Quick
 Rupp
 Salazar
-Soupdrinker
+Sop
 Southside
 Stutz
 Twigg

@@ -11,6 +11,74 @@ const Lobby = () => {
     self.socket.emit("joinRoom", id);
   };
 
+  const listen = () => {
+    self.socket.on("addRoom", (...rooms) => {
+      rooms.forEach((data)  => {
+        const room = Room(data.props, self);
+        self.rooms.set(room.id, room);
+      });
+    });
+
+    self.socket.on("addUser", (...users) => {
+      users.forEach((data) => {
+        const user = User(data.props, self);
+        self.users.set(user.id, user);
+      });
+    });
+
+    self.socket.on("deleteRoom", (...ids) => {
+      ids.forEach((id)  => {
+        self.rooms.delete(id);
+      });
+    });
+
+    self.socket.on("deleteUser", (...ids) => {
+      ids.forEach((id)  => {
+        self.users.delete(id);
+      });
+    });
+
+    self.socket.on("disconnect", (reason) => {
+      unload();
+      console.log("Lobby connection lost!");
+    });
+
+    self.socket.on("ioError", (err) => {
+      console.warn(err);
+    });
+
+    self.socket.on("loadPersonalUser", (id) => {
+      const el = els.userList.querySelector(`[data-id="${id}"]`);
+      el.classList.add("personal");
+    });
+
+    self.socket.on("updateLobbyRoom", (...rooms) => {
+      rooms.forEach((data) => {
+        Object.assign(self.rooms.get(data.id), data.props);
+      });
+    });
+
+    self.socket.on("updateLobbyUser", (...users) => {
+      users.forEach((data) => {
+        Object.assign(self.users.get(data.id), data.props);
+      });
+    });
+
+    els.createRoom.addEventListener("click", (e) => {
+      addRoom();
+    });
+
+    els.login.addEventListener("click", (e) => {
+      login();
+    });
+
+    els.roomList.addEventListener("click", (e) => {
+      if (e.target.tagName === "A") {
+        joinRoom(e.target.dataset.id);
+      }
+    });
+  };
+
   const listRoom = (id, { name, numUsers, maxUsers }) => {
     els.roomList.insertAdjacentHTML("beforeend",
         `<tr data-id="${id}">` +
@@ -123,72 +191,7 @@ const Lobby = () => {
   };
 
 
-  self.socket.on("addRoom", (...rooms) => {
-    rooms.forEach((data)  => {
-      const room = Room(data.props, self);
-      self.rooms.set(room.id, room);
-    });
-  });
-
-  self.socket.on("addUser", (...users) => {
-    users.forEach((data) => {
-      const user = User(data.props, self);
-      self.users.set(user.id, user);
-    });
-  });
-
-  self.socket.on("deleteRoom", (...ids) => {
-    ids.forEach((id)  => {
-      self.rooms.delete(id);
-    });
-  });
-
-  self.socket.on("deleteUser", (...ids) => {
-    ids.forEach((id)  => {
-      self.users.delete(id);
-    });
-  });
-
-  self.socket.on("disconnect", (reason) => {
-    unload();
-    console.log("Lobby connection lost!");
-  });
-
-  self.socket.on("ioError", (err) => {
-    console.warn(err);
-  });
-
-  self.socket.on("loadPersonalUser", (id) => {
-    const el = els.userList.querySelector(`[data-id="${id}"]`);
-    el.classList.add("personal");
-  });
-
-  self.socket.on("updateLobbyRoom", (...rooms) => {
-    rooms.forEach((data) => {
-      Object.assign(self.rooms.get(data.id), data.props);
-    });
-  });
-
-  self.socket.on("updateLobbyUser", (...users) => {
-    users.forEach((data) => {
-      Object.assign(self.users.get(data.id), data.props);
-    });
-  });
-
-
-  els.createRoom.addEventListener("click", (e) => {
-    addRoom();
-  });
-
-  els.login.addEventListener("click", (e) => {
-    login();
-  });
-
-  els.roomList.addEventListener("click", (e) => {
-    if (e.target.tagName === "A") {
-      joinRoom(e.target.dataset.id);
-    }
-  });
+  listen();
 
 
   return self;
