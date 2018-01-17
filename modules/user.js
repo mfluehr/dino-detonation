@@ -7,15 +7,6 @@ const Avatar = require("./avatar"),
 
 
 const User = (socket, lobby) => {
-  const dropBomb = () => {
-    //self.room.level.addBomb(id);
-    console.log("Drop");
-  };
-
-  const halt = () => {
-    // console.log("Halt!");
-  };
-
   const joinRoom = (id) => {
     const room = self.lobby.rooms.get(id);
 
@@ -33,8 +24,90 @@ const User = (socket, lobby) => {
     }
   };
 
+  const listen = () => {
+    self.socket.on("addRoom", (name) => {
+      name = sanitizer.toString(name, 20);
 
-  const properties = {
+      if (!name) {
+        name = self.name + "'s room";
+      }
+
+      try {
+        const room = self.lobby.addRoom(name, self);
+        joinRoom(room.id);
+      }
+      catch (err) {
+        console.warn(err);
+        self.socket.emit("ioError", err);
+      }
+    });
+
+    self.socket.on("disconnect", (reason) => {
+      if (self.room) {
+        self.room.deleteUser(self.id);
+      }
+
+      self.lobby.deleteUser(self.id);
+    });
+
+    self.socket.on("joinRoom", (id) => {
+      id = sanitizer.toString(id);
+      joinRoom(id);
+    });
+
+    self.socket.on("leaveRoom", () => {
+      if (self.room) {
+        self.socket.leave(self.room.id);
+        self.room.deleteUser(self.id);
+      }
+      else {
+        self.socket.emit("ioError", "The user isn't in a room.");
+      }
+    });
+
+    self.socket.on("startGame", () => {
+      if (self.room) {
+        if (self.room.ownerId === self.id) {
+          self.room.startGame();
+        }
+        else {
+          self.socket.emit("ioError", "The user doesn't own the room.");
+        }
+      }
+      else {
+        self.socket.emit("ioError", "The user isn't in a room.");
+      }
+    });
+
+    self.socket.on("updateUser", ({ prop, val }) => {
+      prop = sanitizer.toString(prop);
+
+      if (Object.getOwnPropertyDescriptor(self, prop) &&
+          Object.getOwnPropertyDescriptor(self, prop).writable) {
+        const san = userSanitizer[prop];
+
+        if (san) {
+          try {
+            val = san(val, 20);
+            self[prop] = val;
+          }
+          catch (err) {
+            console.warn(err);
+            self.socket.emit("ioError", err);
+          }
+        }
+        else {
+          self.socket.emit("ioError", `"${prop}" failed to validate.`);
+        }
+      }
+      else {
+        self.socket.emit("ioError", `"${prop}" is not editable.`);
+      }
+    });
+  };
+
+
+  const properties = Object.seal({
     id: "u" + socket.conn.id,
     avatar: undefined,
     email: "noreply@example.com",
@@ -70,7 +143,7 @@ const User = (socket, lobby) => {
         }
       };
     }
-  };
+  });
 
   const self = new Proxy(properties, {
     set: (obj, prop, val) => {
@@ -83,13 +156,13 @@ const User = (socket, lobby) => {
             self.socket.join(self.room.id);
           }
         }
-        else if (prop !== "id") {
+        else {
           const data = {
             id: self.id,
-            props: {}
+            props: {
+              [prop]: val
+            }
           };
-
-          data.props[prop] = val;
 
           if (prop in self.personalData.props) {
             self.socket.emit("updateLobbyUser", data);
@@ -111,8 +184,6 @@ const User = (socket, lobby) => {
   });
 
   properties.avatar = Avatar(self.socket, self);
-
-  Object.seal(properties);
   Util.freezeProperties(properties, ["id"]);
 
   const userSanitizer = {
@@ -134,93 +205,7 @@ const User = (socket, lobby) => {
   };
 
 
-  self.socket.on("addRoom", (name) => {
-    name = sanitizer.toString(name, 20);
-
-    if (!name) {
-      name = self.name + "'s room";
-    }
-
-    try {
-      const room = self.lobby.addRoom(name, self);
-      joinRoom(room.id);
-    }
-    catch (err) {
-      console.warn(err);
-      self.socket.emit("ioError", err);
-    }
-  });
-
-  self.socket.on("disconnect", (reason) => {
-    if (self.room) {
-      self.room.deleteUser(self.id);
-    }
-
-    self.lobby.deleteUser(self.id);
-  });
-
-  self.socket.on("joinRoom", (id) => {
-    id = sanitizer.toString(id);
-    joinRoom(id);
-  });
-
-  self.socket.on("leaveRoom", () => {
-    if (self.room) {
-      self.socket.leave(self.room.id);
-      self.room.deleteUser(self.id);
-    }
-    else {
-      self.socket.emit("ioError", "The user isn't in a room.");
-    }
-  });
-
-  self.socket.on("startGame", () => {
-    if (self.room) {
-      self.room.startGame();
-    }
-    else {
-      self.socket.emit("ioError", "The user isn't in a room.");
-    }
-  });
-
-  self.socket.on("updateUser", ({ prop, val }) => {
-    prop = sanitizer.toString(prop);
-
-    if (Object.getOwnPropertyDescriptor(self, prop) &&
-        Object.getOwnPropertyDescriptor(self, prop).writable) {
-      const san = userSanitizer[prop];
-
-      if (san) {
-        try {
-          val = san(val, 20);
-          self[prop] = val;
-        }
-        catch (err) {
-          console.warn(err);
-          self.socket.emit("ioError", err);
-        }
-      }
-      else {
-        self.socket.emit("ioError", `"${prop}" failed to validate.`);
-      }
-    }
-    else {
-      self.socket.emit("ioError", `"${prop}" is not editable.`);
-    }
-  });
-
-
-
-
-  self.socket.on("dropBomb", () => {
-    dropBomb();
-  });
-
-  self.socket.on("halt", () => {
-    halt();
-  });
-
-
+  listen();
 
 
   return self;

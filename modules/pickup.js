@@ -1,7 +1,7 @@
 "use strict";
 
 
-const types = {
+const pickupTypes = {
   bonus: [
     "boostCapacity",
     "boostExplosion",
@@ -33,8 +33,15 @@ const types = {
 };
 
 const Pickup = () => {
-  let type,
-      odds;
+  const properties = Object.seal({
+    type: "",
+    odds: 1
+  });
+
+  const self = properties;
+
+
+  return self;
 };
 
 module.exports = Pickup;

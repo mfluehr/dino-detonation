@@ -5,7 +5,8 @@ const TileType = ({
   defusesBombs = false,
   explodes = true,
   fatal = false,
-  friction = 1,
+  // friction = 1,
+  friction = Math.random(),
   respawns = false,
   solid = false,
   triggersBombs = false,
@@ -14,18 +15,19 @@ const TileType = ({
   wear = Infinity
 } = {}) => {
   return {
+    stats: {
+      pickupOdds,
+      hp,
+      wear
+    },
+
     get defusesBombs () { return defusesBombs; },
     get explodes () { return explodes; },
     get fatal () { return fatal; },
     get friction () { return friction; },
     get respawns () { return respawns; },
     get solid () { return solid; },
-    get triggersBombs () { return triggersBombs; },
-    stats: {
-      pickupOdds,
-      hp,
-      wear
-    }
+    get triggersBombs () { return triggersBombs; }
   };
 };
 
@@ -50,30 +52,31 @@ const tileTypes = {
 };
 
 const Tile = (type = "grass") => {
-  const stats = Object.assign({}, tileTypes[type].stats);
-
-
   const damage = (amount = 1) => {
-    stats.hp -= amount;
+    self.hp -= amount;
 
-    if (stats.hp <= 0) {
+    if (self.hp <= 0) {
       //// destroy();
     }
   };
 
   const wear = (amount = 1) => {
-    stats.wear -= amount;
+    self.wear -= amount;
 
-    if (stats.wear <= 0) {
+    if (self.wear <= 0) {
       //// destroy();
     }
   }
 
 
-  return {
-    damage,
-    wear
-  };
+  const properties = Object.seal(Object.assign({
+    type: tileTypes[type]
+  }, tileTypes[type].stats));
+
+  const self = properties;
+
+
+  return self;
 };
 
 module.exports = Tile;

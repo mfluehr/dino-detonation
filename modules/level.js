@@ -6,16 +6,13 @@ const Util = require("./util"),
       Tile = require("./tile");
 
 
-const tileWidth = 80;
-const tileHeight = 80;
-
 const maps = {
   testLevel: {
     tiles: [
       [0,0,0,0,0,0,9,0,0,0,0,0,0],
       [0,0,0,0,0,0,9,0,0,0,0,0,0],
       [0,0,0,9,0,0,9,0,0,0,0,0,0],
-      [0,9,9,9,0,0,9,0,0,0,0,0,0],
+      [0,9,9,9,0,0,9,0,0,0,9,9,0],
       [0,0,0,0,0,9,9,9,0,0,0,0,0],
       [0,0,0,0,0,0,0,0,0,0,0,0,0],
       [0,0,0,0,9,0,0,0,0,9,9,9,9],
@@ -36,36 +33,15 @@ const maps = {
 };
 
 
-const Level = ({
-  name,
-  room
-}) => {
-  const self = {
-    get reset () { return reset; },
-    get addBomb () { return addBomb; },
-    get addUser () { return resetUser; },
-    get deleteUser () { return deleteUser; }
-  };
-
-
-  let map = initMap(name),
-      avatars = initAvatars(room.users),
-      bombs = Util.Array2(level.width, level.height),
-      pickups = Util.Array2(level.width, level.height);
-
-
-  const reset = (data) => {
-    ({name} = {...{name}, ...data});
-  };
-
-  const addBomb = (userId, x, y) => {
+const Level = (options, room) => {
+  const addBomb = (ownerId, x, y) => {
     x = tileX(x);
     y = tileY(y);
 
     bomb = Bomb({
       level: self,
       x, y,
-      userId
+      ownerId
     });
 
     bombs[x][y] = bomb;
@@ -77,11 +53,11 @@ const Level = ({
     ////
   };
 
-  const deleteUser = (userId) => {
-    const avatar = room.users.get(userId).avatar;
-
-    avatar.kill();
-    avatars.delete(avatar);  // TODO: only delete once animation completed
+  const deleteUser = (id) => {
+    //// const avatar = self.room.users.get(id).avatar;
+    //
+    // avatar.kill();
+    // avatars.delete(avatar);  // TODO: only delete once animation completed
   };
 
   const freePlayerNumber = () => {
@@ -113,26 +89,70 @@ const Level = ({
     return avatars;
   };
 
-  const initMap = (name) => {
+  const load = (name) => {
+    // Object.assign(self, maps[name]);
     const map = maps[name];
 
-    return map;
+
+    self.width = map.tiles.length;
+    self.height = map.tiles[0].length;
+
+    //// initAvatars();
+    // self.bombs = Util.Array2(self.width, self.height);
+    // self.pickups = Util.Array2(self.width, self.height);
+    self.tiles = Util.Array2(self.width, self.height);
+
+    map.tiles.forEach((row, y) => {
+      row.forEach((col, x) => {
+        self.tiles[x][y] = Tile();
+      });
+    });
   };
 
   const resetAvatar = (avatar) => {
     avatar.reset();
     avatar.playerNumber = freePlayerNumber();
-    avatar.x = map.homes[avatar.playerNumber].x;
-    avatar.y = map.homes[avatar.playerNumber].y;
+    avatar.x = self.homes[avatar.playerNumber].x;
+    avatar.y = self.homes[avatar.playerNumber].y;
   };
 
   const tileX = (x) => {
-    return Math.round(x / tileWidth);
+    return Math.round(x / self.tileWidth);
   };
 
   const tileY = (y) => {
-    return Math.round(y / tileHeight);
+    return Math.round(y / self.tileHeight);
   };
+
+
+  const properties = Object.seal({
+    avatars: new Set(),
+    bombs: [],
+    homes: [],
+    pickups: [],
+    room,
+    tiles: [],
+    tileWidth: 80,
+    tileHeight: 80,
+    width: 0,
+    height: 0,
+
+    get addBomb () { return addBomb; },
+    get addUser () { return resetUser; },
+    get deleteUser () { return deleteUser; },
+    get load () { return load; },
+
+    get roomData () {
+      return {
+        //// id: self.id
+      };
+    }
+  });
+
+  const self = properties;
+
+
+  load(options.name);
 
 
   return self;

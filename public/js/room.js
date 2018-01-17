@@ -52,13 +52,17 @@ const LocalRoom = (lobby) => {
       });
     });
 
-    els.leaveRoom.addEventListener("click", (e) => {
+    self.els.leaveRoom.addEventListener("click", (e) => {
       leaveRoom();
+    });
+
+    self.els.startGame.addEventListener("click", (e) => {
+      startGame();
     });
   };
 
   const listUser = ({ id, name }) => {
-    els.userList.insertAdjacentHTML("beforeend",
+    self.els.userList.insertAdjacentHTML("beforeend",
         `<li data-id="${id}">` +
           `<span class="name">${name}</span>` +
         `</li>`);
@@ -73,12 +77,16 @@ const LocalRoom = (lobby) => {
 
     Object.assign(self, data.props);
 
-    const el = els.userList.querySelector(`[data-id="${lobby.personalUser.base.id}"]`);
+    const el = self.els.userList.querySelector(`[data-id="${lobby.personalUser.base.id}"]`);
     el.classList.add("personal");
   };
 
+  const startGame = () => {
+    self.socket.emit("startGame");
+  };
+
   const unlistUser = (id) => {
-    const li = els.userList.querySelector(`[data-id=${id}]`);
+    const li = self.els.userList.querySelector(`[data-id=${id}]`);
     li.remove();
   };
 
@@ -92,19 +100,19 @@ const LocalRoom = (lobby) => {
     const shownInRoom = new Set(["name"]);
 
     if (shownInRoom.has(prop)) {
-      const el = els.userList.querySelector(`[data-id="${user.id}"] .${prop}`);
+      const el = self.els.userList.querySelector(`[data-id="${user.id}"] .${prop}`);
       el.innerText = user[prop];
     }
   };
 
 
-  const els = {
-    leaveRoom: document.getElementById("room-view-leave"),
-    userList: document.getElementById("room-view-users")
-  };
-
   const properties = {
     base: {},
+    els: {
+      leaveRoom: document.getElementById("room-view-leave"),
+      startGame: document.getElementById("room-view-start"),
+      userList: document.getElementById("room-view-users")
+    },
     socket: lobby.socket,
     users: new Map(),
 
@@ -117,29 +125,36 @@ const LocalRoom = (lobby) => {
       obj[prop] = val;
 
       if (prop === "ownerId") {
-        const el = els.userList.querySelector(`[data-id="${val}"]`);
+        const el = self.els.userList.querySelector(`[data-id="${val}"]`);
         el.classList.add("owner");
+
+        if (val === lobby.personalUser.base.id) {
+          self.els.startGame.classList.remove("hidden");
+        }
+        else {
+          self.els.startGame.classList.add("hidden");
+        }
       }
 
       return true;
     }
   });
 
-  self.users.set = (...args) => {
-    listUser(args[1]);
-    return Map.prototype.set.apply(self.users, args);
+  self.users.set = function (id, user) {
+    listUser(user);
+    return Map.prototype.set.apply(self.users, arguments);
   };
 
-  self.users.clear = (...args) => {
-    while (els.userList.firstChild) {
-      els.userList.removeChild(els.userList.firstChild);
+  self.users.clear = function () {
+    while (self.els.userList.firstChild) {
+      self.els.userList.removeChild(self.els.userList.firstChild);
     }
-    return Map.prototype.clear.apply(self.users, args);
+    return Map.prototype.clear.apply(self.users, arguments);
   };
 
-  self.users.delete = (...args) => {
-    unlistUser(args[0]);
-    return Map.prototype.delete.apply(self.users, args);
+  self.users.delete = function (id) {
+    unlistUser(id);
+    return Map.prototype.delete.apply(self.users, arguments);
   };
 
 

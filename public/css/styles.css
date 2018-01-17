@@ -31,8 +31,8 @@ td {
   flex-grow: 1;
 }
 
-.visible {
-  display: block !important;
+.hidden {
+  display: none !important;
 }
 
 

@@ -22,9 +22,9 @@ const App = () => {
 
       if (prop === "view") {
         for (let i = 0; i < self.els.views.length; i ++) {
-          self.els.views[i].classList.remove("visible");
+          //// self.els.views[i].classList.add("hidden");
         }
-        self.els[val].classList.add("visible");
+        self.els[val].classList.remove("hidden");
       }
 
       return true;

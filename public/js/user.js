@@ -28,6 +28,13 @@ const LocalUser = (base, lobby) => {
 };
 
 const PersonalUser = (lobby) => {
+  const listen = () => {
+    self.socket.on("loadPersonalUser", (id) => {
+      load(lobby.users.get(id));
+      app.view = "lobby";
+    });
+  };
+
   const load = (base) => {
     properties.base = base;
   };
@@ -53,10 +60,7 @@ const PersonalUser = (lobby) => {
   });
 
 
-  self.socket.on("loadPersonalUser", (id) => {
-    load(lobby.users.get(id));
-    app.view = "lobby";
-  });
+  listen();
 
 
   return self;

@@ -1,7 +1,7 @@
 "use strict";
 
 const Level = require("./level"),
-      RoomOptions = require("./room-options"),
+      LevelOptions = require("./level-options"),
       Util = require("./util");
 
 
@@ -48,12 +48,11 @@ const Room = (name = "New Room", lobby, ownerId) => {
   };
 
   const startGame = () => {
-    console.log("Start game!");
-    self.level = Level(self.roomOptions.levels);
+    self.level = Level(self.levelOptions, self);
   };
 
 
-  const properties = {
+  const properties = Object.seal({
     id: "r" + Date.now() + Math.random(),
     level: undefined,
     lobby,
@@ -61,7 +60,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
     name,
     numUsers: 0,
     ownerId,
-    roomOptions: RoomOptions(),
+    levelOptions: LevelOptions(),
     users: new Map(),
 
     get addUser () { return addUser; },
@@ -96,7 +95,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
       return {
         id: self.id,
         props: self.roomData.props,
-        //// level: self.level,
+        //// level: self.level.roomData,
         //// roomOptions: self.roomOptions,
         users: self.userData
       };
@@ -108,28 +107,26 @@ const Room = (name = "New Room", lobby, ownerId) => {
       });
       return roomUsers;
     }
-  };
+  });
 
   const self = new Proxy(properties, {
     set: (obj, prop, val) => {
       if (obj[prop] !== val) {
         obj[prop] = val;
 
-        if (prop !== "id") {
-          const data = {
-            id: self.id,
-            props: {}
-          };
-
-          data.props[prop] = val;
-
-          if (prop in self.lobbyData.props) {
-            self.lobby.clients.emit("updateLobbyRoom", data);
+        const data = {
+          id: self.id,
+          props: {
+            [prop]: val
           }
+        };
 
-          if (prop in self.roomData.props) {
-            self.clients.emit("updateLocalRoom", data);
-          }
+        if (prop in self.lobbyData.props) {
+          self.lobby.clients.emit("updateLobbyRoom", data);
+        }
+
+        if (prop in self.roomData.props) {
+          self.clients.emit("updateLocalRoom", data);
         }
       }
 
@@ -137,21 +134,20 @@ const Room = (name = "New Room", lobby, ownerId) => {
     }
   });
 
-  Object.seal(properties);
   Util.freezeProperties(properties, ["id"]);
 
-  self.users.set = (...args) => {
-    Map.prototype.set.apply(self.users, args);
+  self.users.set = function (id, user) {
+    Map.prototype.set.apply(self.users, arguments);
     self.numUsers = self.users.size;
-    self.clients.emit("addLocalUser", args[1].roomData);
+    self.clients.emit("addLocalUser", user.roomData);
 
     return self.users;
   };
 
-  self.users.delete = (...args) => {
-    Map.prototype.delete.apply(self.users, args);
+  self.users.delete = function (id) {
+    Map.prototype.delete.apply(self.users, arguments);
     self.numUsers = self.users.size;
-    self.clients.emit("deleteLocalUser", args[0]);
+    self.clients.emit("deleteLocalUser", id);
     return self.users;
   };
 

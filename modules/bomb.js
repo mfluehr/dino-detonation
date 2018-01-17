@@ -13,9 +13,14 @@ const Bomb = ({
     ////
   };
 
-  return {
-    explode
-  };
+  const properties = Object.seal({
+    get explode () { return explode; }
+  });
+
+  const self = properties;
+
+
+  return self;
 };
 
 module.exports = Bomb;

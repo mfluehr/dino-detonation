@@ -10,109 +10,111 @@ const Lobby = (server) => {
     if (owner.room) {
       throw "The user can't create a room while in another room.";
     }
-    else if (rooms.size >= maxRooms) {
+    else if (self.rooms.size >= self.maxRooms) {
       throw "The server can't hold any more rooms.";
     }
     else if (name.length === 0) {
       throw "The room must have a name.";
     }
 
-    rooms.forEach((room, roomId) => {
+    self.rooms.forEach((room, roomId) => {
       if (room.name === name) {
         throw "A room with the specified name already exists.";
       }
     });
 
     const newRoom = Room(name, self, owner.id);
-    rooms.set(newRoom.id, newRoom);
+    self.rooms.set(newRoom.id, newRoom);
 
     return newRoom;
   };
 
   const addUser = (socket) => {
-    if (users.size >= maxUsers) {
+    if (self.users.size >= self.maxUsers) {
       throw "The server can't hold any more users.";
     }
 
-    const newUser = User(socket, self),
-          lobbyRooms = [],
-          lobbyUsers = [];
-
-    rooms.forEach((room, roomId) => {
-      lobbyRooms.push(room.lobbyData);
-    });
-    socket.emit("addRoom", ...lobbyRooms);
-
-    users.forEach((user, userId) => {
-      lobbyUsers.push(user.lobbyData);
-    });
-    socket.emit("addUser", ...lobbyUsers);
-
-    users.set(newUser.id, newUser);
-    socket.emit("updateLobbyUser", newUser.personalData);
-    socket.emit("loadPersonalUser", newUser.id);
+    const newUser = User(socket, self);
+    self.users.set(newUser.id, newUser);
 
     return newUser;
   };
 
   const deleteRoom = (roomId) => {
-    rooms.delete(roomId);
+    self.rooms.delete(roomId);
   };
 
   const deleteUser = (userId) => {
-    users.delete(userId);
+    self.users.delete(userId);
+  };
+
+  const listen = () => {
+    self.clients.on("connection", (socket) => {
+      try {
+        addUser(socket);
+      }
+      catch (err) {
+        console.warn(err);
+        socket.emit("ioError", err);
+        socket.disconnect();
+      }
+    });
   };
 
 
-  const self = {
-    get clients () { return clients; },
-    get rooms () { return rooms; },
-    get users () { return users; },
+  const properties = Object.seal({
+    clients: socket(server),
+    maxRooms: 5,
+    maxUsers: 40,
+    rooms: new Map(),
+    users: new Map(),
 
     get addRoom () { return addRoom; },
     get addUser () { return addUser; },
     get deleteRoom () { return deleteRoom; },
     get deleteUser () { return deleteUser; }
-  };
-
-  const io = socket(server),
-        clients = io,
-        maxRooms = 5,
-        maxUsers = 40,
-        rooms = new Map(),
-        users = new Map();
-
-  rooms.set = (...args) => {
-    clients.emit("addRoom", args[1].lobbyData);
-    return Map.prototype.set.apply(rooms, args);
-  };
-
-  rooms.delete = (...args) => {
-    clients.emit("deleteRoom", args[0]);
-    return Map.prototype.delete.apply(rooms, args);
-  };
-
-  users.set = (...args) => {
-    clients.emit("addUser", args[1].lobbyData);
-    return Map.prototype.set.apply(users, args);
-  };
-
-  users.delete = (...args) => {
-    clients.emit("deleteUser", args[0]);
-    return Map.prototype.delete.apply(users, args);
-  };
-
-
-  clients.on("connection", (socket) => {
-    try {
-      addUser(socket);
-    }
-    catch (err) {
-      console.warn(err);
-      socket.emit("ioError", err);
-      socket.disconnect();
-    }
   });
+
+  const self = properties;
+
+  self.rooms.set = function (id, room) {
+    self.clients.emit("addRoom", room.lobbyData);
+    return Map.prototype.set.apply(self.rooms, arguments);
+  };
+
+  self.rooms.delete = function (id) {
+    self.clients.emit("deleteRoom", id);
+    return Map.prototype.delete.apply(self.rooms, arguments);
+  };
+
+  self.users.set = function (id, user) {
+    const lobbyRooms = [],
+          lobbyUsers = [];
+
+    self.rooms.forEach((room, roomId) => {
+      lobbyRooms.push(room.lobbyData);
+    });
+    user.socket.emit("addRoom", ...lobbyRooms);
+
+    self.users.forEach((user, userId) => {
+      lobbyUsers.push(user.lobbyData);
+    });
+    user.socket.emit("addUser", ...lobbyUsers);
+
+    self.clients.emit("addUser", user.lobbyData);
+    user.socket.emit("updateLobbyUser", user.personalData);
+    user.socket.emit("loadPersonalUser", user.id);
+
+    return Map.prototype.set.apply(self.users, arguments);
+  };
+
+  self.users.delete = function (id) {
+    self.clients.emit("deleteUser", id);
+    return Map.prototype.delete.apply(self.users, arguments);
+  };
+
+
+  listen();
 
 
   return self;
