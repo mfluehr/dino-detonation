@@ -52,104 +52,108 @@ const Room = (name = "New Room", lobby, ownerId) => {
   };
 
 
-  const properties = Object.seal({
-    id: "r" + Date.now() + Math.random(),
-    level: undefined,
-    lobby,
-    maxUsers: 4,
-    name,
-    numUsers: 0,
-    ownerId,
-    levelOptions: LevelOptions(),
-    users: new Map(),
+  const self = (() => {
+    const properties = Object.seal({
+      id: "r" + Date.now() + Math.random(),
+      level: undefined,
+      lobby,
+      maxUsers: 4,
+      name,
+      numUsers: 0,
+      ownerId,
+      levelOptions: LevelOptions(),
+      users: new Map(),
 
-    get addUser () { return addUser; },
-    get deleteUser () { return deleteUser; },
-    get startGame () { return startGame; },
+      get addUser () { return addUser; },
+      get deleteUser () { return deleteUser; },
+      get startGame () { return startGame; },
 
-    get clients () {
-      return self.lobby.clients.in(self.id);
-    },
-    get lobbyData () {
-      return {
-        id: self.id,
-        props: {
-          id: self.id,
-          maxUsers: self.maxUsers,
-          name: self.name,
-          numUsers: self.numUsers
-        }
-      };
-    },
-    get roomData () {
-      return {
-        id: self.id,
-        props: {
-          id: self.id,
-          name: self.name,
-          ownerId: self.ownerId
-        }
-      };
-    },
-    get syncData () {
-      return {
-        id: self.id,
-        props: self.roomData.props,
-        //// level: self.level.roomData,
-        //// roomOptions: self.roomOptions,
-        users: self.userData
-      };
-    },
-    get userData () {
-      const roomUsers = [];
-      self.users.forEach((user, userId) => {
-        roomUsers.push(user.roomData);
-      });
-      return roomUsers;
-    }
-  });
-
-  const self = new Proxy(properties, {
-    set: (obj, prop, val) => {
-      if (obj[prop] !== val) {
-        obj[prop] = val;
-
-        const data = {
-          id: self.id,
+      get clients () {
+        return p.lobby.clients.in(p.id);
+      },
+      get lobbyData () {
+        return {
+          id: p.id,
           props: {
-            [prop]: val
+            id: p.id,
+            maxUsers: p.maxUsers,
+            name: p.name,
+            numUsers: p.numUsers
           }
         };
-
-        if (prop in self.lobbyData.props) {
-          self.lobby.clients.emit("updateLobbyRoom", data);
-        }
-
-        if (prop in self.roomData.props) {
-          self.clients.emit("updateLocalRoom", data);
-        }
+      },
+      get roomData () {
+        return {
+          id: p.id,
+          props: {
+            id: p.id,
+            name: p.name,
+            ownerId: p.ownerId
+          }
+        };
+      },
+      get syncData () {
+        return {
+          id: p.id,
+          props: p.roomData.props,
+          //// level: p.level.roomData,
+          //// roomOptions: p.roomOptions,
+          users: p.userData
+        };
+      },
+      get userData () {
+        const roomUsers = [];
+        p.users.forEach((user, userId) => {
+          roomUsers.push(user.roomData);
+        });
+        return roomUsers;
       }
+    });
 
-      return true;
-    }
-  });
+    const p = new Proxy(properties, {
+      set: (obj, prop, val) => {
+        if (obj[prop] !== val) {
+          obj[prop] = val;
 
-  Util.freezeProperties(properties, ["id"]);
+          const data = {
+            id: p.id,
+            props: {
+              [prop]: val
+            }
+          };
 
-  self.users.set = function (id, user) {
-    Map.prototype.set.apply(self.users, arguments);
-    self.numUsers = self.users.size;
-    self.clients.emit("addLocalUser", user.roomData);
+          if (prop in p.lobbyData.props) {
+            p.lobby.clients.emit("updateLobbyRoom", data);
+          }
 
-    return self.users;
-  };
+          if (prop in p.roomData.props) {
+            p.clients.emit("updateLocalRoom", data);
+          }
+        }
 
-  self.users.delete = function (id) {
-    Map.prototype.delete.apply(self.users, arguments);
-    self.numUsers = self.users.size;
-    self.clients.emit("deleteLocalUser", id);
-    return self.users;
-  };
+        return true;
+      }
+    });
+
+    Util.freezeProperties(properties, ["id"]);
+
+    p.users.set = function (id, user) {
+      Map.prototype.set.apply(p.users, arguments);
+      p.numUsers = p.users.size;
+      p.clients.emit("addLocalUser", user.roomData);
+
+      return p.users;
+    };
+
+    p.users.delete = function (id) {
+      Map.prototype.delete.apply(p.users, arguments);
+      p.numUsers = p.users.size;
+      p.clients.emit("deleteLocalUser", id);
+      return p.users;
+    };
+
+    return p;
+  })();
 
 
   return self;

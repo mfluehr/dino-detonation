@@ -4,7 +4,7 @@ const Util = require("./util");
 
 
 const LevelOptions = () => {
-  const self = {
+  const self = Object.seal({
     name: "testLevel",
     timer: 300,
     avatars: {
@@ -23,7 +23,7 @@ const LevelOptions = () => {
       diseases: true,
       timer: 10
     }
-  };
+  });
 
   return self;
 };

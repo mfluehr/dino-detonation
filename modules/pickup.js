@@ -33,12 +33,16 @@ const pickupTypes = {
 };
 
 const Pickup = () => {
-  const properties = Object.seal({
-    type: "",
-    odds: 1
-  });
+  const self = (() => {
+    const properties = Object.seal({
+      type: "",
+      odds: 1
+    });
 
-  const self = properties;
+    const p = properties;
+
+    return p;
+  })();
 
 
   return self;

@@ -6,33 +6,6 @@ const Util = require("./util"),
       Tile = require("./tile");
 
 
-const maps = {
-  testLevel: {
-    tiles: [
-      [0,0,0,0,0,0,9,0,0,0,0,0,0],
-      [0,0,0,0,0,0,9,0,0,0,0,0,0],
-      [0,0,0,9,0,0,9,0,0,0,0,0,0],
-      [0,9,9,9,0,0,9,0,0,0,9,9,0],
-      [0,0,0,0,0,9,9,9,0,0,0,0,0],
-      [0,0,0,0,0,0,0,0,0,0,0,0,0],
-      [0,0,0,0,9,0,0,0,0,9,9,9,9],
-      [0,0,0,0,9,0,0,0,0,0,9,9,9],
-      [0,0,0,0,9,0,0,0,0,0,0,0,0],
-      [0,0,0,0,0,0,9,9,9,0,0,0,0],
-      [0,0,0,0,0,0,9,9,9,0,0,0,0],
-      [0,0,0,0,0,9,9,9,0,0,0,0,0],
-      [0,0,0,0,0,9,9,9,0,0,0,0,0]
-    ],
-    homes: {
-      1: [0, 0],
-      2: [13, 13],
-      3: [13, 0],
-      4: [0, 13]
-    }
-  }
-};
-
-
 const Level = (options, room) => {
   const addBomb = (ownerId, x, y) => {
     x = tileX(x);
@@ -125,31 +98,35 @@ const Level = (options, room) => {
   };
 
 
-  const properties = Object.seal({
-    avatars: new Set(),
-    bombs: [],
-    homes: [],
-    pickups: [],
-    room,
-    tiles: [],
-    tileWidth: 80,
-    tileHeight: 80,
-    width: 0,
-    height: 0,
+  const self = (() => {
+    const properties = Object.seal({
+      avatars: new Set(),
+      bombs: [],
+      homes: [],
+      pickups: [],
+      room,
+      tiles: [],
+      tileWidth: 80,
+      tileHeight: 80,
+      width: 0,
+      height: 0,
 
-    get addBomb () { return addBomb; },
-    get addUser () { return resetUser; },
-    get deleteUser () { return deleteUser; },
-    get load () { return load; },
+      get addBomb () { return addBomb; },
+      get addUser () { return resetUser; },
+      get deleteUser () { return deleteUser; },
+      get load () { return load; },
 
-    get roomData () {
-      return {
-        //// id: self.id
-      };
-    }
-  });
+      get roomData () {
+        return {
+          //// id: p.id
+        };
+      }
+    });
 
-  const self = properties;
+    const p = properties;
+
+    return p;
+  })();
 
 
   load(options.name);
@@ -157,5 +134,33 @@ const Level = (options, room) => {
 
   return self;
 };
+
+
+const maps = {
+  testLevel: {
+    tiles: [
+      [0,0,0,0,0,0,9,0,0,0,0,0,0],
+      [0,0,0,0,0,0,9,0,0,0,0,0,0],
+      [0,0,0,9,0,0,9,0,0,0,0,0,0],
+      [0,9,9,9,0,0,9,0,0,0,9,9,0],
+      [0,0,0,0,0,9,9,9,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,9,0,0,0,0,9,9,9,9],
+      [0,0,0,0,9,0,0,0,0,0,9,9,9],
+      [0,0,0,0,9,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,9,9,9,0,0,0,0],
+      [0,0,0,0,0,0,9,9,9,0,0,0,0],
+      [0,0,0,0,0,9,9,9,0,0,0,0,0],
+      [0,0,0,0,0,9,9,9,0,0,0,0,0]
+    ],
+    homes: {
+      1: [0, 0],
+      2: [13, 13],
+      3: [13, 0],
+      4: [0, 13]
+    }
+  }
+};
+
 
 module.exports = Level;

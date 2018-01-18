@@ -13,11 +13,16 @@ const Bomb = ({
     ////
   };
 
-  const properties = Object.seal({
-    get explode () { return explode; }
-  });
 
-  const self = properties;
+  const self = (() => {
+    const properties = Object.seal({
+      get explode () { return explode; }
+    });
+
+    const p = properties;
+
+    return p;
+  })();
 
 
   return self;

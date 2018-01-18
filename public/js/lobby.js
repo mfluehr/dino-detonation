@@ -135,59 +135,65 @@ const Lobby = () => {
     }
   };
 
+  const self = (() => {
+    const properties = Object.seal({
+      els: {
+        createRoom: document.getElementById("create-room"),
+        login: document.getElementById("login"),
+        roomList: document.getElementById("lobby-view-rooms"),
+        roomName: document.getElementById("room-name"),
+        userList: document.getElementById("lobby-view-users"),
+        userName: document.getElementById("user-name")
+      },
+      personalUser: {},
+      socket: io.connect(app.url),
+      rooms: new Map(),
+      users: new Map(),
 
-  const self = {
-    els: {
-      createRoom: document.getElementById("create-room"),
-      login: document.getElementById("login"),
-      roomList: document.getElementById("lobby-view-rooms"),
-      roomName: document.getElementById("room-name"),
-      userList: document.getElementById("lobby-view-users"),
-      userName: document.getElementById("user-name")
-    },
-    socket: io.connect(app.url),
-    rooms: new Map(),
-    users: new Map(),
+      get updateRoom () { return updateRoom; },
+      get updateUser () { return updateUser; }
+    });
 
-    get updateRoom () { return updateRoom; },
-    get updateUser () { return updateUser; }
-  };
+    const p = properties;
 
-  self.personalUser = PersonalUser(self);
+    p.personalUser = PersonalUser(p);
 
-  self.rooms.set = function (id, room) {
-    listRoom(room);
-    return Map.prototype.set.apply(self.rooms, arguments);
-  };
+    p.rooms.set = function (id, room) {
+      listRoom(room);
+      return Map.prototype.set.apply(p.rooms, arguments);
+    };
 
-  self.rooms.clear = function () {
-    while (self.els.roomList.firstChild) {
-      self.els.roomList.removeChild(self.els.roomList.firstChild);
-    }
-    return Map.prototype.clear.apply(self.rooms, arguments);
-  };
+    p.rooms.clear = function () {
+      while (p.els.roomList.firstChild) {
+        p.els.roomList.removeChild(p.els.roomList.firstChild);
+      }
+      return Map.prototype.clear.apply(p.rooms, arguments);
+    };
 
-  self.rooms.delete = function (id) {
-    unlistRoom(id);
-    return Map.prototype.delete.apply(self.rooms, arguments);
-  };
+    p.rooms.delete = function (id) {
+      unlistRoom(id);
+      return Map.prototype.delete.apply(p.rooms, arguments);
+    };
 
-  self.users.set = function (id, user) {
-    listUser(user);
-    return Map.prototype.set.apply(self.users, arguments);
-  };
+    p.users.set = function (id, user) {
+      listUser(user);
+      return Map.prototype.set.apply(p.users, arguments);
+    };
 
-  self.users.clear = function () {
-    while (self.els.userList.firstChild) {
-      self.els.userList.removeChild(self.els.userList.firstChild);
-    }
-    return Map.prototype.clear.apply(self.users, arguments);
-  };
+    p.users.clear = function () {
+      while (p.els.userList.firstChild) {
+        p.els.userList.removeChild(p.els.userList.firstChild);
+      }
+      return Map.prototype.clear.apply(p.users, arguments);
+    };
 
-  self.users.delete = function (id) {
-    unlistUser(id);
-    return Map.prototype.delete.apply(self.users, arguments);
-  };
+    p.users.delete = function (id) {
+      unlistUser(id);
+      return Map.prototype.delete.apply(p.users, arguments);
+    };
+
+    return p;
+  })();
 
 
   listen();

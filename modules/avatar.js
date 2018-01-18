@@ -68,38 +68,42 @@ const Avatar = (socket, user) => {
   };
 
 
-  const properties = Object.seal({
-    pickups: new Set(),
-    playerNumber: 0,
-    x: 0,
-    y: 0,
-    bombRange: 0,
-    bombSpeed: 0,
-    bombTimer: 0,
-    bombsUsed: 0,
-    capacity: 0,
-    minCapacity: 0,
-    maxCapacity: 0,
-    face: Util.DIRECTIONS.bottom,
-    speed: 0,
-    minSpeed: 0,
-    maxSpeed: 0,
-    stats: {
-      blocksDestroyed: 0,
-      bombsDropped: 0,
-      deaths: 0,
-      distWalked: 0,
-      kills: 0,
-      pickupsCollected: 0,
-      suicides: 0,
-      survivalTime: 0
-    },
+  const self = (() => {
+    const properties = Object.seal({
+      pickups: new Set(),
+      playerNumber: 0,
+      x: 0,
+      y: 0,
+      bombRange: 0,
+        bombSpeed: 0,
+        bombTimer: 0,
+        bombsUsed: 0,
+      capacity: 0,
+        minCapacity: 0,
+        maxCapacity: 0,
+      face: Util.DIRECTIONS.bottom,
+      speed: 0,
+        minSpeed: 0,
+        maxSpeed: 0,
+      stats: {
+        blocksDestroyed: 0,
+        bombsDropped: 0,
+        deaths: 0,
+        distWalked: 0,
+        kills: 0,
+        pickupsCollected: 0,
+        suicides: 0,
+        survivalTime: 0
+      },
 
-    get reset () { return reset; },
-    get leaveRoom () { return reset; }
-  });
+      get reset () { return reset; },
+      get leaveRoom () { return reset; }
+    });
 
-  const self = properties;
+    const p = properties;
+
+    return p;
+  })();
 
 
   listen();

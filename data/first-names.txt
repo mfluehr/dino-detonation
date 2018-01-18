@@ -1,6 +1,7 @@
 Al
 Arthur
 Betty
+Bing
 Caesar
 Chauncy
 Dennis
@@ -9,7 +10,7 @@ Edsel
 Fred
 Gus
 Harlow
-Isadore
+Iggy
 Jack
 Junior
 Karl
@@ -30,6 +31,7 @@ Stanley
 Thelma
 Theseus
 Unwin
+Vin
 Waldo
 Xander
 Xerxes

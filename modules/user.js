@@ -107,84 +107,88 @@ const User = (socket, lobby) => {
   };
 
 
-  const properties = Object.seal({
-    id: "u" + socket.conn.id,
-    avatar: undefined,
-    email: "noreply@example.com",
-    lobby,
-    socket,
-    name: randomName(),
-    room: undefined,
+  const self = (() => {
+    const properties = Object.seal({
+      id: "u" + socket.conn.id,
+      avatar: undefined,
+      email: "noreply@example.com",
+      lobby,
+      socket,
+      name: randomName(),
+      room: undefined,
 
-    get lobbyData () {
-      return {
-        id: self.id,
-        props: {
-          id: self.id,
-          name: self.name
-        }
-      };
-    },
-    get personalData () {
-      return {
-        id: self.id,
-        props: {
-          email: self.email
-        }
-      };
-    },
-    get roomData () {
-      return {
-        id: self.id,
-        props: {
-          id: self.id,
-          name: self.name,
-          //// readyToStart: true
-        }
-      };
-    }
-  });
-
-  const self = new Proxy(properties, {
-    set: (obj, prop, val) => {
-      if (obj[prop] !== val) {
-        obj[prop] = val;
-
-        if (prop === "room") {
-          if (val) {
-            self.socket.emit("loadLocalRoom", self.room.syncData);
-            self.socket.join(self.room.id);
+      get lobbyData () {
+        return {
+          id: p.id,
+          props: {
+            id: p.id,
+            name: p.name
           }
-        }
-        else {
-          const data = {
-            id: self.id,
-            props: {
-              [prop]: val
-            }
-          };
+        };
+      },
+      get personalData () {
+        return {
+          id: p.id,
+          props: {
+            email: p.email
+          }
+        };
+      },
+      get roomData () {
+        return {
+          id: p.id,
+          props: {
+            id: p.id,
+            name: p.name,
+            //// readyToStart: true
+          }
+        };
+      }
+    });
 
-          if (prop in self.personalData.props) {
-            self.socket.emit("updateLobbyUser", data);
+    const p = new Proxy(properties, {
+      set: (obj, prop, val) => {
+        if (obj[prop] !== val) {
+          obj[prop] = val;
+
+          if (prop === "room") {
+            if (val) {
+              p.socket.emit("loadLocalRoom", p.room.syncData);
+              p.socket.join(p.room.id);
+            }
           }
           else {
-            if (prop in self.lobbyData.props) {
-              self.lobby.clients.emit("updateLobbyUser", data);
-            }
+            const data = {
+              id: p.id,
+              props: {
+                [prop]: val
+              }
+            };
 
-            if (self.room && prop in self.roomData.props) {
-              self.room.clients.emit("updateLocalUser", data);
+            if (prop in p.personalData.props) {
+              p.socket.emit("updateLobbyUser", data);
+            }
+            else {
+              if (prop in p.lobbyData.props) {
+                p.lobby.clients.emit("updateLobbyUser", data);
+              }
+
+              if (p.room && prop in p.roomData.props) {
+                p.room.clients.emit("updateLocalUser", data);
+              }
             }
           }
         }
+
+        return true;
       }
+    });
 
-      return true;
-    }
-  });
+    properties.avatar = Avatar(p.socket, p);
+    Util.freezeProperties(properties, ["id"]);
 
-  properties.avatar = Avatar(self.socket, self);
-  Util.freezeProperties(properties, ["id"]);
+    return p;
+  })();
 
   const userSanitizer = {
     name: (name) => {

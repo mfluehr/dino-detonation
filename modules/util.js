@@ -1,5 +1,6 @@
 "use strict";
 
+
 module.exports.DIRECTIONS = Object.freeze({
   "top": 1,
   "right": 2,

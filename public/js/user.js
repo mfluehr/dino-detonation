@@ -36,28 +36,33 @@ const PersonalUser = (lobby) => {
   };
 
   const load = (base) => {
-    properties.base = base;
+    self.base = base;
   };
 
 
   const editable = new Set(["email", "name"]);
 
-  const properties = {
-    base: {},
-    room: LocalRoom(lobby),
-    socket: lobby.socket
-  };
+  const self = (() => {
+    const properties = {
+      base: {},
+      room: LocalRoom(lobby),
+      socket: lobby.socket
+    };
 
-  const self = new Proxy(properties, {
-    set: (obj, prop, val) => {
-      if (editable.has(prop)) {
-        self.socket.emit("updateUser", { prop, val });
+    const p = new Proxy(properties, {
+      set: (obj, prop, val) => {
+        if (editable.has(prop)) {
+          p.socket.emit("updateUser", { prop, val });
+          return true;
+        }
+
+        obj[prop] = val;
         return true;
       }
+    });
 
-      return false;
-    }
-  });
+    return p;
+  })();
 
 
   listen();

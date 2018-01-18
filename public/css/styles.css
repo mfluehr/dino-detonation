@@ -47,17 +47,11 @@ td {
   border-top: 2px solid #a55;
 }
 
-#lobby-view {
-  /* display: none; */
-}
+#lobby-view {}
 
-#room-view {
-  /* display: none; */
-}
+#room-view {}
   .owner {
     font-style: italic;
   }
 
-#game-view {
-  display: none;
-}
+#game-view {}

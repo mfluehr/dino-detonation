@@ -69,7 +69,7 @@ const LocalRoom = (lobby) => {
   };
 
   const load = (base, data) => {
-    properties.base = base;
+    self.base = base;
 
     data.users.forEach((user) => {
       addUser(user.id, user.props);
@@ -106,56 +106,60 @@ const LocalRoom = (lobby) => {
   };
 
 
-  const properties = {
-    base: {},
-    els: {
-      leaveRoom: document.getElementById("room-view-leave"),
-      startGame: document.getElementById("room-view-start"),
-      userList: document.getElementById("room-view-users")
-    },
-    socket: lobby.socket,
-    users: new Map(),
+  const self = (() => {
+    const properties = {
+      base: {},
+      els: {
+        leaveRoom: document.getElementById("room-view-leave"),
+        startGame: document.getElementById("room-view-start"),
+        userList: document.getElementById("room-view-users")
+      },
+      socket: lobby.socket,
+      users: new Map(),
 
-    get leaveRoom () { return leaveRoom; },
-    get updateUser () { return updateUser; }
-  };
+      get leaveRoom () { return leaveRoom; },
+      get updateUser () { return updateUser; }
+    };
 
-  const self = new Proxy(properties, {
-    set: (obj, prop, val) => {
-      obj[prop] = val;
+    const p = new Proxy(properties, {
+      set: (obj, prop, val) => {
+        obj[prop] = val;
 
-      if (prop === "ownerId") {
-        const el = self.els.userList.querySelector(`[data-id="${val}"]`);
-        el.classList.add("owner");
+        if (prop === "ownerId") {
+          const el = p.els.userList.querySelector(`[data-id="${val}"]`);
+          el.classList.add("owner");
 
-        if (val === lobby.personalUser.base.id) {
-          self.els.startGame.classList.remove("hidden");
+          if (val === lobby.personalUser.base.id) {
+            p.els.startGame.classList.remove("hidden");
+          }
+          else {
+            p.els.startGame.classList.add("hidden");
+          }
         }
-        else {
-          self.els.startGame.classList.add("hidden");
-        }
+
+        return true;
       }
+    });
 
-      return true;
-    }
-  });
+    p.users.set = function (id, user) {
+      listUser(user);
+      return Map.prototype.set.apply(p.users, arguments);
+    };
 
-  self.users.set = function (id, user) {
-    listUser(user);
-    return Map.prototype.set.apply(self.users, arguments);
-  };
+    p.users.clear = function () {
+      while (p.els.userList.firstChild) {
+        p.els.userList.removeChild(p.els.userList.firstChild);
+      }
+      return Map.prototype.clear.apply(p.users, arguments);
+    };
 
-  self.users.clear = function () {
-    while (self.els.userList.firstChild) {
-      self.els.userList.removeChild(self.els.userList.firstChild);
-    }
-    return Map.prototype.clear.apply(self.users, arguments);
-  };
+    p.users.delete = function (id) {
+      unlistUser(id);
+      return Map.prototype.delete.apply(p.users, arguments);
+    };
 
-  self.users.delete = function (id) {
-    unlistUser(id);
-    return Map.prototype.delete.apply(self.users, arguments);
-  };
+    return p;
+  })();
 
 
   listen();
