@@ -143,19 +143,19 @@ const LocalRoom = (lobby) => {
 
     p.users.set = function (id, user) {
       listUser(user);
-      return Map.prototype.set.apply(p.users, arguments);
+      return Map.prototype.set.apply(this, arguments);
     };
 
     p.users.clear = function () {
       while (p.els.userList.firstChild) {
         p.els.userList.removeChild(p.els.userList.firstChild);
       }
-      return Map.prototype.clear.apply(p.users, arguments);
+      return Map.prototype.clear.apply(this, arguments);
     };
 
     p.users.delete = function (id) {
       unlistUser(id);
-      return Map.prototype.delete.apply(p.users, arguments);
+      return Map.prototype.delete.apply(this, arguments);
     };
 
     return p;
@@ -214,8 +214,6 @@ const LocalRoom = (lobby) => {
     if (action && !action[1]) {
       startAction(action);
     }
-
-    //// client.avatar.move(angle);
   });
 
   document.addEventListener("keyup", (e) => {

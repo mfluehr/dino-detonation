@@ -25,6 +25,25 @@ const User = (socket, lobby) => {
   };
 
   const listen = () => {
+    const userSanitizer = {
+      name: (name) => {
+        name = sanitizer.toString(name);
+
+        if (!name) {
+          throw "The user must have a name.";
+        }
+
+        self.lobby.users.forEach((user, id) => {
+          if (self.name === name) {
+            throw "A user with the specified name already exists.";
+          }
+        })
+
+        return name;
+      }
+    };
+
+
     self.socket.on("addRoom", (name) => {
       name = sanitizer.toString(name, 20);
 
@@ -189,24 +208,6 @@ const User = (socket, lobby) => {
 
     return p;
   })();
-
-  const userSanitizer = {
-    name: (name) => {
-      name = sanitizer.toString(name);
-
-      if (!name) {
-        throw "The user must have a name.";
-      }
-
-      self.lobby.users.forEach((user, id) => {
-        if (self.name === name) {
-          throw "A user with the specified name already exists.";
-        }
-      })
-
-      return name;
-    }
-  };
 
 
   listen();

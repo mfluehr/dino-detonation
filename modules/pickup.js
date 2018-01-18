@@ -1,6 +1,23 @@
 "use strict";
 
 
+const Pickup = () => {
+  const self = (() => {
+    const properties = Object.seal({
+      type: "",
+      odds: 1
+    });
+
+    const p = properties;
+
+    return p;
+  })();
+
+
+  return self;
+};
+
+
 const pickupTypes = {
   bonus: [
     "boostCapacity",
@@ -32,20 +49,5 @@ const pickupTypes = {
   ]
 };
 
-const Pickup = () => {
-  const self = (() => {
-    const properties = Object.seal({
-      type: "",
-      odds: 1
-    });
-
-    const p = properties;
-
-    return p;
-  })();
-
-
-  return self;
-};
 
 module.exports = Pickup;

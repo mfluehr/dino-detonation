@@ -138,7 +138,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
     Util.freezeProperties(properties, ["id"]);
 
     p.users.set = function (id, user) {
-      Map.prototype.set.apply(p.users, arguments);
+      Map.prototype.set.apply(this, arguments);
       p.numUsers = p.users.size;
       p.clients.emit("addLocalUser", user.roomData);
 
@@ -146,7 +146,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
     };
 
     p.users.delete = function (id) {
-      Map.prototype.delete.apply(p.users, arguments);
+      Map.prototype.delete.apply(this, arguments);
       p.numUsers = p.users.size;
       p.clients.emit("deleteLocalUser", id);
       return p.users;

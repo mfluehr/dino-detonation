@@ -40,9 +40,9 @@ const PersonalUser = (lobby) => {
   };
 
 
-  const editable = new Set(["email", "name"]);
-
   const self = (() => {
+    const editable = new Set(["email", "name"]);
+
     const properties = {
       base: {},
       room: LocalRoom(lobby),

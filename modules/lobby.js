@@ -80,12 +80,12 @@ const Lobby = (server) => {
 
     p.rooms.set = function (id, room) {
       p.clients.emit("addRoom", room.lobbyData);
-      return Map.prototype.set.apply(p.rooms, arguments);
+      return Map.prototype.set.apply(this, arguments);
     };
 
     p.rooms.delete = function (id) {
       p.clients.emit("deleteRoom", id);
-      return Map.prototype.delete.apply(p.rooms, arguments);
+      return Map.prototype.delete.apply(this, arguments);
     };
 
     p.users.set = function (id, user) {
@@ -106,12 +106,12 @@ const Lobby = (server) => {
       user.socket.emit("updateLobbyUser", user.personalData);
       user.socket.emit("loadPersonalUser", user.id);
 
-      return Map.prototype.set.apply(p.users, arguments);
+      return Map.prototype.set.apply(this, arguments);
     };
 
     p.users.delete = function (id) {
       p.clients.emit("deleteUser", id);
-      return Map.prototype.delete.apply(p.users, arguments);
+      return Map.prototype.delete.apply(this, arguments);
     };
 
     return p;

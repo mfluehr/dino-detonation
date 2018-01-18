@@ -160,36 +160,36 @@ const Lobby = () => {
 
     p.rooms.set = function (id, room) {
       listRoom(room);
-      return Map.prototype.set.apply(p.rooms, arguments);
+      return Map.prototype.set.apply(this, arguments);
     };
 
     p.rooms.clear = function () {
       while (p.els.roomList.firstChild) {
         p.els.roomList.removeChild(p.els.roomList.firstChild);
       }
-      return Map.prototype.clear.apply(p.rooms, arguments);
+      return Map.prototype.clear.apply(this, arguments);
     };
 
     p.rooms.delete = function (id) {
       unlistRoom(id);
-      return Map.prototype.delete.apply(p.rooms, arguments);
+      return Map.prototype.delete.apply(this, arguments);
     };
 
     p.users.set = function (id, user) {
       listUser(user);
-      return Map.prototype.set.apply(p.users, arguments);
+      return Map.prototype.set.apply(this, arguments);
     };
 
     p.users.clear = function () {
       while (p.els.userList.firstChild) {
         p.els.userList.removeChild(p.els.userList.firstChild);
       }
-      return Map.prototype.clear.apply(p.users, arguments);
+      return Map.prototype.clear.apply(this, arguments);
     };
 
     p.users.delete = function (id) {
       unlistUser(id);
-      return Map.prototype.delete.apply(p.users, arguments);
+      return Map.prototype.delete.apply(this, arguments);
     };
 
     return p;

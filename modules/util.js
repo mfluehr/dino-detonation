@@ -18,6 +18,20 @@ module.exports.Array2 = (w, h, val = 0) => {
 };
 
 
+module.exports.degToDirection = (deg) => {
+  const zzz = {
+    270: DIRECTIONS.top,
+    0: DIRECTIONS.right,
+    90: DIRECTIONS.bottom,
+    180: DIRECTIONS.left
+  };
+
+  deg %= 360;
+  deg = Math.ceil(x / 90) * 90;
+
+  return; ////
+};
+
 module.exports.freezeProperties = (obj, list = []) => {
   const frozenProp = {
     configurable: false,

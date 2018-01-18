@@ -2,11 +2,11 @@
 
 
 const TileType = ({
+  name = "unknown",
   defusesBombs = false,
-  explodes = true,
+  explodes = false,
   fatal = false,
-  // friction = 1,
-  friction = Math.random(),
+  friction = 1,
   respawns = false,
   solid = false,
   triggersBombs = false,
@@ -14,21 +14,27 @@ const TileType = ({
   pickupOdds = 0,
   wear = Infinity
 } = {}) => {
-  const self = {
-    stats: {
-      pickupOdds,
-      hp,
-      wear
-    },
+  const self = (() => {
+    const properties = Object.freeze({
+      stats: {
+        pickupOdds,
+        hp,
+        wear
+      },
 
-    get defusesBombs () { return defusesBombs; },
-    get explodes () { return explodes; },
-    get fatal () { return fatal; },
-    get friction () { return friction; },
-    get respawns () { return respawns; },
-    get solid () { return solid; },
-    get triggersBombs () { return triggersBombs; }
-  };
+      get defusesBombs () { return defusesBombs; },
+      get explodes () { return explodes; },
+      get fatal () { return fatal; },
+      get friction () { return friction; },
+      get respawns () { return respawns; },
+      get solid () { return solid; },
+      get triggersBombs () { return triggersBombs; }
+    });
+
+    const p = properties;
+
+    return p;
+  })();
 
   return self;
 };
@@ -67,23 +73,50 @@ const Tile = (type = "grass") => {
 
 
 const tileTypes = {
-  "fire": TileType({
+  0: TileType({
+    name: "grass"
+  }),
+  1: TileType({
+    name: "rock",
+    hp: 1,
+    solid: true
+  }),
+  2: TileType({
+    name: "fire",
     fatal: true,
     triggersBombs: true
   }),
-  "grass": TileType(),
-  "marsh": TileType({
+  3: TileType({
+    name: "marsh",
     defusesBombs: true
   }),
-  "mine": TileType(),
-  "mirror": TileType(),
-  "oil": TileType(),
-  "pit": TileType(),
-  "steel": TileType(),
-  "tnt": TileType({
-    explodes: true,
+  4: TileType({
+    name: "mirror",
     solid: true
   }),
+  5: TileType({
+    name: "oil",
+    friction: 0
+  }),
+  6: TileType({
+    name: "pit",
+    defusesBombs: true,
+    fatal: true
+  }),
+  7: TileType({
+    name: "steel",
+    solid: true
+  }),
+  8: TileType({
+    name: "tnt",
+    explodes: true,
+    hp: 1,
+    solid: true
+  }),
+  9: TileType({
+    name: "fan",
+    solid: true
+  })
 };
 
 

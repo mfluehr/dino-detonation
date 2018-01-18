@@ -1,31 +1,16 @@
 "use strict";
 
-const Util = require("./util");
+const Util = require("./util"),
+      sanitizer = require("./sanitizer");
 
 
 const Avatar = (socket, user) => {
-  const reset = () => {
-    const avatarOptions = user.room.levelOptions.avatars,
-          bombOptions = user.room.levelOptions.bombs;
-
-    Object.assign(self, avatarOptions, {
-      bombRange: bombOptions.range,
-      bombSpeed: bombOptions.speed,
-      bombTimer: bombOptions.timer
-    });
-
-    self.bombsUsed = 0;
-    self.capacity = self.minCapacity;
-    self.face = Util.DIRECTIONS.bottom;
-    self.speed = self.minSpeed;
-  };
-
   const dropBomb = () => {
-    //// self.room.level.addBomb(user.id);
+    //// self.room.level.addBomb(self.user.id);
     console.log("Drop");
 
     // if (self.bombsUsed < self.capacity) {
-    //   if (user.room.level.addBomb(user.id, x, y)) {
+    //   if (self.user.room.level.addBomb(self.user.id, x, y)) {
     //     self.bombsUsed ++;
     //   }
     // }
@@ -44,34 +29,52 @@ const Avatar = (socket, user) => {
   const leaveRoom = () => {};
 
   const listen = () => {
-    socket.on("dropBomb", () => {
+    self.socket.on("dropBomb", () => {
       dropBomb();
-      ////this.broadcast("dropBomb");
     });
 
-    socket.on("explodeAllBombs", () => {
+    self.socket.on("explodeAllBombs", () => {
       explodeAllBombs();
     });
 
-    socket.on("halt", () => {
+    self.socket.on("halt", () => {
       halt();
     });
 
-    socket.on("move", (angle) => {
-      // TODO: sanitize angle
-      move(angle);
+    self.socket.on("move", (deg) => {
+      deg = sanitizer.toFloat(deg);
+      move(deg);
     });
   };
 
-  const move = (angle) => {
-    //// socket.broadcast("move", angle);
+  const move = (deg) => {
+    ////
+    const dir = Util.degToDirection(angle);
+  };
+
+  const spawn = (level) => {
+    const room = level.room,
+          home = level.homes.shift(),
+          avatarOptions = room.levelOptions.avatars,
+          bombOptions = room.levelOptions.bombs;
+
+    Object.assign(self, avatarOptions, {
+      x: home[0],
+      y: home[1],
+      bombRange: bombOptions.range,
+        bombSpeed: bombOptions.speed,
+        bombTimer: bombOptions.timer,
+        bombsUsed: 0,
+      capacity: avatarOptions.minCapacity,
+      speed: avatarOptions.minSpeed
+    });
+
+    self.pickups.clear();
   };
 
 
   const self = (() => {
     const properties = Object.seal({
-      pickups: new Set(),
-      playerNumber: 0,
       x: 0,
       y: 0,
       bombRange: 0,
@@ -82,6 +85,8 @@ const Avatar = (socket, user) => {
         minCapacity: 0,
         maxCapacity: 0,
       face: Util.DIRECTIONS.bottom,
+      pickups: new Set(),
+      socket,
       speed: 0,
         minSpeed: 0,
         maxSpeed: 0,
@@ -95,12 +100,23 @@ const Avatar = (socket, user) => {
         suicides: 0,
         survivalTime: 0
       },
+      user,
 
-      get reset () { return reset; },
-      get leaveRoom () { return reset; }
+      get leaveRoom () { return leaveRoom; },
+      get spawn () { return spawn; }
     });
 
-    const p = properties;
+    const p = new Proxy(properties, {
+      set: (obj, prop, val) => {
+        if (obj[prop] !== val) {
+          obj[prop] = val;
+
+          // p.socket.emit("updateAvatar", data); ////
+        }
+
+        return true;
+      }
+    });
 
     return p;
   })();
