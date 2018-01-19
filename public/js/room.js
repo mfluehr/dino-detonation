@@ -15,9 +15,9 @@ const Room = (properties, lobby) => {
 
 const LocalRoom = (lobby) => {
   const addUser = (id, props) => {
-    const local = LocalUser(lobby.users.get(id), lobby);
-    self.users.set(local.id, local);
-    Object.assign(local, props);
+    const localUser = LocalUser(lobby.users.get(id), lobby);
+    self.users.set(localUser.id, localUser);
+    Object.assign(localUser, props);
   };
 
   const leaveRoom = () => {
@@ -35,6 +35,12 @@ const LocalRoom = (lobby) => {
       ids.forEach((id)  => {
         self.users.delete(id);
       });
+    });
+
+    self.socket.on("loadLocalLevel", (data) => {
+      console.log(data);
+      //// load(lobby.rooms.get(data.id), data);
+      app.view = "game";
     });
 
     self.socket.on("loadLocalRoom", (data) => {
@@ -163,66 +169,6 @@ const LocalRoom = (lobby) => {
 
 
   listen();
-
-
-
-
-
-  const actions = {
-    " ": ["dropBomb", false],
-    "ArrowUp": ["moveUp", false],
-    "ArrowRight": ["moveRight", false],
-    "ArrowDown": ["moveDown", false],
-    "ArrowLeft": ["moveLeft", false]
-  };
-
-  const endAction = (action) => {
-    action[1] = false;
-
-    switch (action[0]) {
-      case "moveUp":
-      case "moveRight":
-      case "moveDown":
-      case "moveLeft":
-        self.socket.emit("halt");
-        break;
-    }
-  };
-
-  const startAction = (action) => {
-    console.log("start:", action[0]);
-
-    action[1] = true;
-
-    switch (action[0]) {
-      case "dropBomb":
-        self.socket.emit("dropBomb");
-        break;
-      case "moveUp":
-        self.socket.emit("move", 270);
-        break;
-      case "moveRight":
-        self.socket.emit("move", 0);
-        break;
-    }
-  };
-
-
-  document.addEventListener("keydown", (e) => {
-    const action = actions[e.key];
-
-    if (action && !action[1]) {
-      startAction(action);
-    }
-  });
-
-  document.addEventListener("keyup", (e) => {
-    const action = actions[e.key];
-
-    if (action) {
-      endAction(action);
-    }
-  });
 
 
   return self;

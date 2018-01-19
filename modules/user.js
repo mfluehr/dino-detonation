@@ -1,7 +1,7 @@
 "use strict";
 
 const Avatar = require("./avatar"),
-      Util = require("./util"),
+      util = require("./util"),
       randomName = require("./random-name"),
       sanitizer = require("./sanitizer");
 
@@ -132,6 +132,7 @@ const User = (socket, lobby) => {
       avatar: undefined,
       email: "noreply@example.com",
       lobby,
+      //// readyToStart: false,
       socket,
       name: randomName(),
       room: undefined,
@@ -159,7 +160,7 @@ const User = (socket, lobby) => {
           props: {
             id: p.id,
             name: p.name,
-            //// readyToStart: true
+            //// readyToStart: p.readyToStart
           }
         };
       }
@@ -172,7 +173,7 @@ const User = (socket, lobby) => {
 
           if (prop === "room") {
             if (val) {
-              p.socket.emit("loadLocalRoom", p.room.syncData);
+              p.socket.emit("loadLocalRoom", p.room.roomData);
               p.socket.join(p.room.id);
             }
           }
@@ -204,7 +205,7 @@ const User = (socket, lobby) => {
     });
 
     properties.avatar = Avatar(p.socket, p);
-    Util.freezeProperties(properties, ["id"]);
+    util.freezeProperties(properties, ["id"]);
 
     return p;
   })();

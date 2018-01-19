@@ -1,6 +1,6 @@
 "use strict";
 
-const Util = require("./util"),
+const util = require("./util"),
       Bomb = require("./bomb"),
       //// Pickup = require("./pickup"),
       Tile = require("./tile");
@@ -8,18 +8,19 @@ const Util = require("./util"),
 
 const Level = (options, room) => {
   const addBomb = (ownerId, x, y) => {
-    x = tileX(x);
-    y = tileY(y);
-
-    bomb = Bomb({
+    const bomb = Bomb({
       level: self,
-      x, y,
+      x: roundToTileX(x),
+      y: roundToTileY(y),
       ownerId
     });
 
-    bombs[x][y] = bomb;
+    if (tileOpenAt(x, y)) {
+      self.bombs.push(bomb);
+      return bomb;
+    }
 
-    return true;
+    return false;
   };
 
   const addPickup = (x, y) => {
@@ -49,8 +50,8 @@ const Level = (options, room) => {
 
     const map = maps[name];
 
-    self.width = map.tiles.length;
-    self.height = map.tiles[0].length;
+    self.numCols = map.tiles.length;
+    self.numRows = map.tiles[0].length;
     self.homes = [...map.homes];
     self.bombs = [];
     self.pickups = [];
@@ -59,12 +60,20 @@ const Level = (options, room) => {
     initAvatars();
   };
 
-  const tileX = (x) => {
-    return Math.round(x / self.tileWidth);
+  const nearestCol = (x) => {
+    return Math.toInterval(x / self.tileWidth);
   };
 
-  const tileY = (y) => {
-    return Math.round(y / self.tileHeight);
+  const nearestRow = (y) => {
+    return Math.toInterval(y / self.tileHeight);
+  };
+
+  const roundToTileX = (x) => {
+    return nearestCol(x) * self.tileWidth;
+  };
+
+  const roundToTileY = (y) => {
+    return nearestRow(y) * self.tileHeight;
   };
 
 
@@ -72,13 +81,13 @@ const Level = (options, room) => {
     const properties = Object.seal({
       bombs: [],
       homes: [],
+      numCols: 0,
+      numRows: 0,
       pickups: [],
       room,
       tiles: [],
       tileWidth: 80,
       tileHeight: 80,
-      width: 0,
-      height: 0,
 
       get addBomb () { return addBomb; },
       get addUser () { return resetUser; },
@@ -87,8 +96,22 @@ const Level = (options, room) => {
 
       get roomData () {
         return {
-          //// id: p.id
+          roomId: p.room.id,
+          props: {
+            numCols: p.numCols,
+            numRows: p.numRows,
+            tileWidth: p.tileWidth,
+            tileHeight: p.tileHeight
+          },
+          tiles: p.tileData
         };
+      },
+      get tileData () {
+        const levelTiles = [];
+        p.tiles.forEach((tile, tileId) => {
+          levelTiles.push(tile.roomData);
+        });
+        return levelTiles;
       }
     });
 

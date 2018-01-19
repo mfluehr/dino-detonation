@@ -16,19 +16,19 @@ const TileType = ({
 } = {}) => {
   const self = (() => {
     const properties = Object.freeze({
+      name,
+      defusesBombs,
+      explodes,
+      fatal,
+      friction,
+      respawns,
+      solid,
+      triggersBombs,
       stats: {
-        pickupOdds,
         hp,
+        pickupOdds,
         wear
-      },
-
-      get defusesBombs () { return defusesBombs; },
-      get explodes () { return explodes; },
-      get fatal () { return fatal; },
-      get friction () { return friction; },
-      get respawns () { return respawns; },
-      get solid () { return solid; },
-      get triggersBombs () { return triggersBombs; }
+      }
     });
 
     const p = properties;
@@ -39,7 +39,7 @@ const TileType = ({
   return self;
 };
 
-const Tile = (type = "grass") => {
+const Tile = (type) => {
   const damage = (amount = 1) => {
     self.hp -= amount;
 
@@ -108,7 +108,7 @@ const tileTypes = {
     solid: true
   }),
   8: TileType({
-    name: "tnt",
+    name: "TNT",
     explodes: true,
     hp: 1,
     solid: true

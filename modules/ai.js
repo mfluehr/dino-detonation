@@ -153,7 +153,7 @@ const mapThreatTimes = (avatar) => {
 };
 
 const mapDynamite = (avatar) => {
-  let dynamiteMap = Util.Array2(level.width, level.height),
+  let dynamiteMap = util.Array2(level.width, level.height),
       friends = 0,
       enemies = 0;
 

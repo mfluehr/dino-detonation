@@ -1,6 +1,6 @@
 "use strict";
 
-const Util = require("./util"),
+const util = require("./util"),
       sanitizer = require("./sanitizer");
 
 
@@ -9,11 +9,11 @@ const Avatar = (socket, user) => {
     //// self.room.level.addBomb(self.user.id);
     console.log("Drop");
 
-    // if (self.bombsUsed < self.capacity) {
+    if (self.bombsUsed < self.capacity) {
     //   if (self.user.room.level.addBomb(self.user.id, x, y)) {
     //     self.bombsUsed ++;
     //   }
-    // }
+    }
   };
 
   const explodeAllBombs = () => {
@@ -41,15 +41,16 @@ const Avatar = (socket, user) => {
       halt();
     });
 
-    self.socket.on("move", (deg) => {
-      deg = sanitizer.toFloat(deg);
-      move(deg);
+    self.socket.on("move", (rad) => {
+      rad = sanitizer.toFloat(rad);
+      move(rad);
     });
   };
 
-  const move = (deg) => {
+  const move = (rad) => {
     ////
-    const dir = Util.degToDirection(angle);
+    // deg = util.toInterval(deg, 90);
+    rad = util.toInterval(rad, Math.PI * 1/2);
   };
 
   const spawn = (level) => {
@@ -84,7 +85,7 @@ const Avatar = (socket, user) => {
       capacity: 0,
         minCapacity: 0,
         maxCapacity: 0,
-      face: Util.DIRECTIONS.bottom,
+      face: util.DIRECTIONS.bottom,
       pickups: new Set(),
       socket,
       speed: 0,

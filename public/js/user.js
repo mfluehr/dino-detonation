@@ -2,12 +2,10 @@
 
 
 const User = (properties, lobby) => {
-  properties.lobby = lobby;
-
   const self = new Proxy(properties, {
     set: (obj, prop, val) => {
       obj[prop] = val;
-      self.lobby.updateUser(self, prop);
+      lobby.updateUser(self, prop);
       return true;
     }
   });
@@ -16,13 +14,23 @@ const User = (properties, lobby) => {
 };
 
 const LocalUser = (base, lobby) => {
-  const self = new Proxy(base, {
-    set: (obj, prop, val) => {
-      obj[prop] = val;
-      self.lobby.personalUser.room.updateUser(self, prop);
-      return true;
-    }
-  });
+  const self = (() => {
+    const properties = Object.assign({}, base, {
+      avatar: undefined
+    });
+
+    const p = new Proxy(properties, {
+      set: (obj, prop, val) => {
+        obj[prop] = val;
+        lobby.personalUser.room.updateUser(p, prop);
+        return true;
+      }
+    });
+
+    properties.avatar = LocalAvatar(p);
+
+    return p;
+  })();
 
   return self;
 };

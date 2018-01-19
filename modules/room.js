@@ -2,7 +2,7 @@
 
 const Level = require("./level"),
       LevelOptions = require("./level-options"),
-      Util = require("./util");
+      util = require("./util");
 
 
 const Room = (name = "New Room", lobby, ownerId) => {
@@ -83,23 +83,24 @@ const Room = (name = "New Room", lobby, ownerId) => {
         };
       },
       get roomData () {
-        return {
+        const data = {
           id: p.id,
           props: {
             id: p.id,
+            //// levelOptions: p.levelOptions,
             name: p.name,
             ownerId: p.ownerId
-          }
-        };
-      },
-      get syncData () {
-        return {
-          id: p.id,
-          props: p.roomData.props,
-          //// level: p.level.roomData,
-          //// roomOptions: p.roomOptions,
+          },
           users: p.userData
         };
+
+        if (p.level) {
+          Object.assign(data, {
+            level: p.level.roomData
+          });
+        }
+
+        return data;
       },
       get userData () {
         const roomUsers = [];
@@ -115,19 +116,24 @@ const Room = (name = "New Room", lobby, ownerId) => {
         if (obj[prop] !== val) {
           obj[prop] = val;
 
-          const data = {
-            id: p.id,
-            props: {
-              [prop]: val
-            }
-          };
-
-          if (prop in p.lobbyData.props) {
-            p.lobby.clients.emit("updateLobbyRoom", data);
+          if (prop === "level") {
+            p.clients.emit("loadLocalLevel", p.level.roomData);
           }
+          else {
+            const data = {
+              id: p.id,
+              props: {
+                [prop]: val
+              }
+            };
 
-          if (prop in p.roomData.props) {
-            p.clients.emit("updateLocalRoom", data);
+            if (prop in p.lobbyData.props) {
+              p.lobby.clients.emit("updateLobbyRoom", data);
+            }
+
+            if (prop in p.roomData.props) {
+              p.clients.emit("updateLocalRoom", data);
+            }
           }
         }
 
@@ -135,7 +141,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
       }
     });
 
-    Util.freezeProperties(properties, ["id"]);
+    util.freezeProperties(properties, ["id"]);
 
     p.users.set = function (id, user) {
       Map.prototype.set.apply(this, arguments);

@@ -1,6 +1,6 @@
 "use strict";
 
-const Util = require("./util");
+const util = require("./util");
 
 
 const LevelOptions = () => {
@@ -8,7 +8,7 @@ const LevelOptions = () => {
     name: "testLevel",
     timer: 300,
     avatars: {
-      face: Util.DIRECTIONS.bottom,
+      face: util.DIRECTIONS.bottom,
       minCapacity: 4,
       maxCapacity: 10,
       minSpeed: .4,
