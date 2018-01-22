@@ -5,7 +5,7 @@ const Room = (properties, lobby) => {
   const self = new Proxy(properties, {
     set: (obj, prop, val) => {
       obj[prop] = val;
-      lobby.showRoom(self, prop);
+      lobby.showRoomUpdate(self, prop);
       return true;
     }
   });
@@ -22,41 +22,38 @@ const LocalRoom = (lobby) => {
     });
   };
 
-  const listen = () => {
+  const listenToServer = () => {
     self.socket.on("addLocalUser", (...data) => addUsers(data));
     self.socket.on("deleteLocalUser", (id) => self.users.delete(id));
-
-    self.socket.on("loadLocalLevel", (data) => {
-      console.log(data);
-      app.view = "game";
-    });
-
     self.socket.on("loadLocalRoom", (data) => load(data));
     self.socket.on("updateLocalRoom", (data) => updateRoom(data));
     self.socket.on("updateLocalUser", (data) => updateUser(data));
-
-    self.els.leaveRoom.addEventListener("click", (e) => unload());
-    self.els.startGame.addEventListener("click", (e) => startGame());
   };
 
-  const listUser = ({ id, name }) => {
-    self.els.userList.insertAdjacentHTML("beforeend",
-        `<li data-id="${id}">` +
-          `<span class="name">${name}</span>` +
-        `</li>`);
+  const listenToUser = () => {
+    self.els.leaveRoom.addEventListener("click", (e) => unload());
+    self.els.startGame.addEventListener("click", (e) => startGame());
   };
 
   const load = (data) => {
     self.base = lobby.rooms.get(data.id);
     addUsers(data.users);
     Object.assign(self, data.props);
-
-    const el = self.els.userList.querySelector(`[data-id="${lobby.personalUser.base.id}"]`);
-    el.classList.add("personal");
+    listenToUser();
     app.view = "room";
+
+    const el = self.els.userList.querySelector(`[data-id="${lobby.personalUser.id}"]`);
+    el.classList.add("personal");
   };
 
-  const showUser = (user, prop) => {
+  const showUser = ({ id, name }) => {
+    self.els.userList.insertAdjacentHTML("beforeend",
+        `<li data-id="${id}">` +
+          `<span class="name">${name}</span>` +
+        `</li>`);
+  };
+
+  const showUserUpdate = (user, prop) => {
     const shownInRoom = new Set(["name"]);
 
     if (shownInRoom.has(prop)) {
@@ -69,7 +66,7 @@ const LocalRoom = (lobby) => {
     self.socket.emit("startGame");
   };
 
-  const unshowUser = (id) => {
+  const unshowUserUpdate = (id) => {
     const li = self.els.userList.querySelector(`[data-id=${id}]`);
     li.remove();
   };
@@ -100,7 +97,7 @@ const LocalRoom = (lobby) => {
       socket: lobby.socket,
       users: new Map(),
 
-      get showUser () { return showUser; },
+      get showUserUpdate () { return showUserUpdate; },
       get unload () { return unload; }
     };
 
@@ -112,7 +109,7 @@ const LocalRoom = (lobby) => {
           const el = p.els.userList.querySelector(`[data-id="${val}"]`);
           el.classList.add("owner");
 
-          if (val === lobby.personalUser.base.id) {
+          if (val === lobby.personalUser.id) {
             p.els.startGame.classList.remove("hidden");
           }
           else {
@@ -125,7 +122,7 @@ const LocalRoom = (lobby) => {
     });
 
     p.users.set = function (id, user) {
-      listUser(user);
+      showUser(user);
       return Map.prototype.set.apply(this, arguments);
     };
 
@@ -137,15 +134,17 @@ const LocalRoom = (lobby) => {
     };
 
     p.users.delete = function (id) {
-      unshowUser(id);
+      unshowUserUpdate(id);
       return Map.prototype.delete.apply(this, arguments);
     };
+
+    p.localLevel = LocalLevel(p);
 
     return p;
   })();
 
 
-  listen();
+  listenToServer();
 
 
   return self;

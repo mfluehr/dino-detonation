@@ -10,7 +10,7 @@ const LocalAvatar = (user) => {
     const p = new Proxy(properties, {
       set: (obj, prop, val) => {
         obj[prop] = val;
-        //// self.user.room.level.showAvatar(self, prop);
+        //// self.user.room.level.showAvatarUpdate(self, prop);
         return true;
       }
     });
@@ -36,7 +36,7 @@ const PersonalAvatar = (user) => {
     }
   };
 
-  const listen = () => {
+  const listenToUser = () => {
     document.addEventListener("keydown", (e) => {
       const action = self.actions[e.key];
 
@@ -89,7 +89,8 @@ const PersonalAvatar = (user) => {
         "ArrowDown": ["moveDown", false],
         "ArrowLeft": ["moveLeft", false]
       },
-      socket: user.socket
+      socket: user.socket,
+      user
     };
 
     const p = properties;
@@ -98,7 +99,7 @@ const PersonalAvatar = (user) => {
   })();
 
 
-  listen();
+  //// listenToUser();
 
 
   return self;

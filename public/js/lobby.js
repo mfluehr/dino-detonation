@@ -35,7 +35,7 @@ const Lobby = () => {
     self.socket.emit("joinRoom", id);
   };
 
-  const listen = () => {
+  const listenToServer = () => {
     self.socket.on("addLobbyRoom", (...data) => addRooms(data));
     self.socket.on("addLobbyUser", (...data) => addUsers(data));
     self.socket.on("deleteLobbyRoom", (id) => self.rooms.delete(id));
@@ -46,7 +46,9 @@ const Lobby = () => {
     self.socket.on("loadLobby", (data) => load(data));
     self.socket.on("updateLobbyRoom", (data) => updateRoom(data));
     self.socket.on("updateLobbyUser", (data) => updateUser(data));
+  };
 
+  const listenToUser = () => {
     self.els.createRoom.addEventListener("click", (e) => createRoom());
     self.els.login.addEventListener("click", (e) => login());
 
@@ -57,7 +59,31 @@ const Lobby = () => {
     });
   };
 
-  const listRoom = ({ id, name, numUsers, maxUsers }) => {
+  const load = (data) => {
+    if (data.rooms.length) {
+      addRooms(data.rooms);
+    }
+
+    if (data.users.length) {
+      addUsers(data.users);
+    }
+
+    listenToUser();
+  };
+
+  const loadPersonalUser = (id) => {
+    const el = self.els.userList.querySelector(`[data-id="${id}"]`);
+    el.classList.add("personal");
+
+    lobby.personalUser.load(self.users.get(id));
+    app.view = "lobby";
+  };
+
+  const login = () => {
+    self.personalUser.name = self.els.userName.value;
+  };
+
+  const showRoom = ({ id, name, numUsers, maxUsers }) => {
     self.els.roomList.insertAdjacentHTML("beforeend",
         `<tr data-id="${id}">` +
           `<td><a class="name" href="#" data-id="${id}">${name}</a></td>` +
@@ -68,33 +94,14 @@ const Lobby = () => {
         `</tr>`);
   };
 
-  const listUser = ({ id, name }) => {
+  const showUser = ({ id, name }) => {
     self.els.userList.insertAdjacentHTML("beforeend",
         `<li data-id="${id}">` +
           `<span class="name">${name}</span>` +
         `</li>`);
   };
 
-  const load = (data) => {
-    if (data.rooms.length) {
-      addRooms(data.rooms);
-    }
-
-    if (data.users.length) {
-      addUsers(data.users);
-    }
-  };
-
-  const loadPersonalUser = (id) => {
-    const el = self.els.userList.querySelector(`[data-id="${id}"]`);
-    el.classList.add("personal");
-  };
-
-  const login = () => {
-    self.personalUser.name = self.els.userName.value;
-  };
-
-  const showRoom = (room, prop) => {
+  const showRoomUpdate = (room, prop) => {
     const shownInLobby = new Set(["name", "maxUsers", "numUsers"]);
 
     if (shownInLobby.has(prop)) {
@@ -103,7 +110,7 @@ const Lobby = () => {
     }
   };
 
-  const showUser = (user, prop) => {
+  const showUserUpdate = (user, prop) => {
     const shownInLobby = new Set(["name"]);
 
     if (shownInLobby.has(prop)) {
@@ -112,12 +119,12 @@ const Lobby = () => {
     }
   };
 
-  const unshowRoom = (id) => {
+  const unshowRoomUpdate = (id) => {
     const li = self.els.roomList.querySelector(`[data-id="${id}"]`);
     li.remove();
   };
 
-  const unshowUser = (id) => {
+  const unshowUserUpdate = (id) => {
     const li = self.els.userList.querySelector(`[data-id="${id}"]`);
     li.remove();
   };
@@ -153,8 +160,8 @@ const Lobby = () => {
       rooms: new Map(),
       users: new Map(),
 
-      get showRoom () { return showRoom; },
-      get showUser () { return showUser; }
+      get showRoomUpdate () { return showRoomUpdate; },
+      get showUserUpdate () { return showUserUpdate; }
     });
 
     const p = properties;
@@ -162,7 +169,7 @@ const Lobby = () => {
     p.personalUser = PersonalUser(p);
 
     p.rooms.set = function (id, room) {
-      listRoom(room);
+      showRoom(room);
       return Map.prototype.set.apply(this, arguments);
     };
 
@@ -174,12 +181,12 @@ const Lobby = () => {
     };
 
     p.rooms.delete = function (id) {
-      unshowRoom(id);
+      unshowRoomUpdate(id);
       return Map.prototype.delete.apply(this, arguments);
     };
 
     p.users.set = function (id, user) {
-      listUser(user);
+      showUser(user);
       return Map.prototype.set.apply(this, arguments);
     };
 
@@ -191,7 +198,7 @@ const Lobby = () => {
     };
 
     p.users.delete = function (id) {
-      unshowUser(id);
+      unshowUserUpdate(id);
       return Map.prototype.delete.apply(this, arguments);
     };
 
@@ -199,7 +206,7 @@ const Lobby = () => {
   })();
 
 
-  listen();
+  listenToServer();
 
 
   return self;

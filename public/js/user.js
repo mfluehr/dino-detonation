@@ -5,7 +5,7 @@ const User = (properties = {}, lobby) => {
   const self = new Proxy(properties, {
     set: (obj, prop, val) => {
       obj[prop] = val;
-      lobby.showUser(self, prop);
+      lobby.showUserUpdate(self, prop);
       return true;
     }
   });
@@ -15,14 +15,12 @@ const User = (properties = {}, lobby) => {
 
 const LocalUser = (base, lobby) => {
   const self = (() => {
-    const properties = Object.assign({}, base, {
-      avatar: undefined
-    });
+    const properties = Object.assign({}, base);
 
     const p = new Proxy(properties, {
       set: (obj, prop, val) => {
         obj[prop] = val;
-        lobby.personalUser.room.showUser(p, prop);
+        lobby.personalUser.room.showUserUpdate(p, prop);
         return true;
       }
     });
@@ -36,15 +34,9 @@ const LocalUser = (base, lobby) => {
 };
 
 const PersonalUser = (lobby) => {
-  const listen = () => {
-    self.socket.on("loadPersonalUser", (id) => {
-      load(lobby.users.get(id));
-      app.view = "lobby";
-    });
-  };
-
   const load = (base) => {
     self.base = base;
+    self.id = base.id;
   };
 
 
@@ -52,9 +44,10 @@ const PersonalUser = (lobby) => {
     const editable = new Set(["email", "name"]);
 
     const properties = {
-      base: {},
       room: LocalRoom(lobby),
-      socket: lobby.socket
+      socket: lobby.socket,
+
+      get load () { return load; }
     };
 
     const p = new Proxy(properties, {
@@ -69,11 +62,10 @@ const PersonalUser = (lobby) => {
       }
     });
 
+    properties.avatar = PersonalAvatar(p);
+
     return p;
   })();
-
-
-  listen();
 
 
   return self;
