@@ -2,7 +2,31 @@
 
 
 const Lobby = () => {
-  const addRoom = () => {
+  const addRooms = (rooms) => {
+    rooms.forEach((room) => {
+      if (self.rooms.has(room.id)) {
+        Object.assign(self.rooms.get(room.id), room.props);
+      }
+      else {
+        const newRoom = Room(room.props, self);
+        self.rooms.set(newRoom.id, newRoom);
+      }
+    });
+  };
+
+  const addUsers = (users) => {
+    users.forEach((user) => {
+      if (self.users.has(user.id)) {
+        Object.assign(self.users.get(user.id), user.props);
+      }
+      else {
+        const newUser = User(user.props, self);
+        self.users.set(newUser.id, newUser);
+      }
+    });
+  };
+
+  const createRoom = () => {
     const roomName = self.els.roomName.value;
     self.socket.emit("addRoom", roomName);
   };
@@ -12,65 +36,19 @@ const Lobby = () => {
   };
 
   const listen = () => {
-    self.socket.on("addRoom", (...rooms) => {
-      rooms.forEach((data)  => {
-        const room = Room(data.props, self);
-        self.rooms.set(room.id, room);
-      });
-    });
+    self.socket.on("addLobbyRoom", (...data) => addRooms(data));
+    self.socket.on("addLobbyUser", (...data) => addUsers(data));
+    self.socket.on("deleteLobbyRoom", (id) => self.rooms.delete(id));
+    self.socket.on("deleteLobbyUser", (id) => self.users.delete(id));
+    self.socket.on("disconnect", (reason) => unload());
+    self.socket.on("ioError", (err) => console.warn(err));
+    self.socket.on("loadPersonalUser", (data) => loadPersonalUser(data));
+    self.socket.on("loadLobby", (data) => load(data));
+    self.socket.on("updateLobbyRoom", (data) => updateRoom(data));
+    self.socket.on("updateLobbyUser", (data) => updateUser(data));
 
-    self.socket.on("addUser", (...users) => {
-      users.forEach((data) => {
-        const user = User(data.props, self);
-        self.users.set(user.id, user);
-      });
-    });
-
-    self.socket.on("deleteRoom", (...ids) => {
-      ids.forEach((id)  => {
-        self.rooms.delete(id);
-      });
-    });
-
-    self.socket.on("deleteUser", (...ids) => {
-      ids.forEach((id)  => {
-        self.users.delete(id);
-      });
-    });
-
-    self.socket.on("disconnect", (reason) => {
-      unload();
-      console.log("Lobby connection lost!");
-    });
-
-    self.socket.on("ioError", (err) => {
-      console.warn(err);
-    });
-
-    self.socket.on("loadPersonalUser", (id) => {
-      const el = self.els.userList.querySelector(`[data-id="${id}"]`);
-      el.classList.add("personal");
-    });
-
-    self.socket.on("updateLobbyRoom", (...rooms) => {
-      rooms.forEach((data) => {
-        Object.assign(self.rooms.get(data.id), data.props);
-      });
-    });
-
-    self.socket.on("updateLobbyUser", (...users) => {
-      users.forEach((data) => {
-        Object.assign(self.users.get(data.id), data.props);
-      });
-    });
-
-    self.els.createRoom.addEventListener("click", (e) => {
-      addRoom();
-    });
-
-    self.els.login.addEventListener("click", (e) => {
-      login();
-    });
+    self.els.createRoom.addEventListener("click", (e) => createRoom());
+    self.els.login.addEventListener("click", (e) => login());
 
     self.els.roomList.addEventListener("click", (e) => {
       if (e.target.tagName === "A") {
@@ -97,27 +75,26 @@ const Lobby = () => {
         `</li>`);
   };
 
+  const load = (data) => {
+    if (data.rooms.length) {
+      addRooms(data.rooms);
+    }
+
+    if (data.users.length) {
+      addUsers(data.users);
+    }
+  };
+
+  const loadPersonalUser = (id) => {
+    const el = self.els.userList.querySelector(`[data-id="${id}"]`);
+    el.classList.add("personal");
+  };
+
   const login = () => {
     self.personalUser.name = self.els.userName.value;
   };
 
-  const unlistRoom = (id) => {
-    const li = self.els.roomList.querySelector(`[data-id="${id}"]`);
-    li.remove();
-  };
-
-  const unlistUser = (id) => {
-    const li = self.els.userList.querySelector(`[data-id="${id}"]`);
-    li.remove();
-  };
-
-  const unload = () => {
-    self.rooms.clear();
-    self.users.clear();
-    self.personalUser.room.leaveRoom();
-  };
-
-  const updateRoom = (room, prop) => {
+  const showRoom = (room, prop) => {
     const shownInLobby = new Set(["name", "maxUsers", "numUsers"]);
 
     if (shownInLobby.has(prop)) {
@@ -126,7 +103,7 @@ const Lobby = () => {
     }
   };
 
-  const updateUser = (user, prop) => {
+  const showUser = (user, prop) => {
     const shownInLobby = new Set(["name"]);
 
     if (shownInLobby.has(prop)) {
@@ -134,6 +111,32 @@ const Lobby = () => {
       el.innerText = user[prop];
     }
   };
+
+  const unshowRoom = (id) => {
+    const li = self.els.roomList.querySelector(`[data-id="${id}"]`);
+    li.remove();
+  };
+
+  const unshowUser = (id) => {
+    const li = self.els.userList.querySelector(`[data-id="${id}"]`);
+    li.remove();
+  };
+
+  const unload = () => {
+    self.rooms.clear();
+    self.users.clear();
+    self.personalUser.room.unload();
+    console.log("Lobby connection lost!");
+  };
+
+  const updateRoom = (room) => {
+    Object.assign(self.rooms.get(room.id), room.props);
+  };
+
+  const updateUser = (user) => {
+    Object.assign(self.users.get(user.id), user.props);
+  };
+
 
   const self = (() => {
     const properties = Object.seal({
@@ -150,8 +153,8 @@ const Lobby = () => {
       rooms: new Map(),
       users: new Map(),
 
-      get updateRoom () { return updateRoom; },
-      get updateUser () { return updateUser; }
+      get showRoom () { return showRoom; },
+      get showUser () { return showUser; }
     });
 
     const p = properties;
@@ -171,7 +174,7 @@ const Lobby = () => {
     };
 
     p.rooms.delete = function (id) {
-      unlistRoom(id);
+      unshowRoom(id);
       return Map.prototype.delete.apply(this, arguments);
     };
 
@@ -188,7 +191,7 @@ const Lobby = () => {
     };
 
     p.users.delete = function (id) {
-      unlistUser(id);
+      unshowUser(id);
       return Map.prototype.delete.apply(this, arguments);
     };
 

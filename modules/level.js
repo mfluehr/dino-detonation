@@ -94,7 +94,7 @@ const Level = (options, room) => {
       get deleteUser () { return deleteUser; },
       get load () { return load; },
 
-      get roomData () {
+      get localData () {
         return {
           roomId: p.room.id,
           props: {
@@ -107,11 +107,11 @@ const Level = (options, room) => {
         };
       },
       get tileData () {
-        const levelTiles = [];
+        const tileData = [];
         p.tiles.forEach((tile, tileId) => {
-          levelTiles.push(tile.roomData);
+          tileData.push(tile.localData);
         });
-        return levelTiles;
+        return tileData;
       }
     });
 

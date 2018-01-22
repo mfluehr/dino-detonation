@@ -1,11 +1,11 @@
 "use strict";
 
 
-const User = (properties, lobby) => {
+const User = (properties = {}, lobby) => {
   const self = new Proxy(properties, {
     set: (obj, prop, val) => {
       obj[prop] = val;
-      lobby.updateUser(self, prop);
+      lobby.showUser(self, prop);
       return true;
     }
   });
@@ -22,7 +22,7 @@ const LocalUser = (base, lobby) => {
     const p = new Proxy(properties, {
       set: (obj, prop, val) => {
         obj[prop] = val;
-        lobby.personalUser.room.updateUser(p, prop);
+        lobby.personalUser.room.showUser(p, prop);
         return true;
       }
     });

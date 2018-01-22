@@ -10,7 +10,7 @@ const LocalAvatar = (user) => {
     const p = new Proxy(properties, {
       set: (obj, prop, val) => {
         obj[prop] = val;
-        //// self.user.room.level.updateAvatar(self, prop);
+        //// self.user.room.level.showAvatar(self, prop);
         return true;
       }
     });

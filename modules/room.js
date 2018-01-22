@@ -82,7 +82,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
           }
         };
       },
-      get roomData () {
+      get localData () {
         const data = {
           id: p.id,
           props: {
@@ -96,18 +96,18 @@ const Room = (name = "New Room", lobby, ownerId) => {
 
         if (p.level) {
           Object.assign(data, {
-            level: p.level.roomData
+            level: p.level.localData
           });
         }
 
         return data;
       },
       get userData () {
-        const roomUsers = [];
+        const userData = [];
         p.users.forEach((user, userId) => {
-          roomUsers.push(user.roomData);
+          userData.push(user.localData);
         });
-        return roomUsers;
+        return userData;
       }
     });
 
@@ -117,7 +117,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
           obj[prop] = val;
 
           if (prop === "level") {
-            p.clients.emit("loadLocalLevel", p.level.roomData);
+            p.clients.emit("loadLocalLevel", p.level.localData);
           }
           else {
             const data = {
@@ -131,7 +131,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
               p.lobby.clients.emit("updateLobbyRoom", data);
             }
 
-            if (prop in p.roomData.props) {
+            if (prop in p.localData.props) {
               p.clients.emit("updateLocalRoom", data);
             }
           }
@@ -146,8 +146,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
     p.users.set = function (id, user) {
       Map.prototype.set.apply(this, arguments);
       p.numUsers = p.users.size;
-      p.clients.emit("addLocalUser", user.roomData);
-
+      p.clients.emit("addLocalUser", user.localData);
       return p.users;
     };
 

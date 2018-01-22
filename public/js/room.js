@@ -5,7 +5,7 @@ const Room = (properties, lobby) => {
   const self = new Proxy(properties, {
     set: (obj, prop, val) => {
       obj[prop] = val;
-      lobby.updateRoom(self, prop);
+      lobby.showRoom(self, prop);
       return true;
     }
   });
@@ -14,57 +14,29 @@ const Room = (properties, lobby) => {
 };
 
 const LocalRoom = (lobby) => {
-  const addUser = (id, props) => {
-    const localUser = LocalUser(lobby.users.get(id), lobby);
-    self.users.set(localUser.id, localUser);
-    Object.assign(localUser, props);
-  };
-
-  const leaveRoom = () => {
-    unload();
+  const addUsers = (users) => {
+    users.forEach((user) => {
+      const localUser = LocalUser(lobby.users.get(user.id), lobby);
+      self.users.set(localUser.id, localUser);
+      Object.assign(localUser, user.props);
+    });
   };
 
   const listen = () => {
-    self.socket.on("addLocalUser", (...users) => {
-      users.forEach((user) => {
-        addUser(user.id, user.props);
-      });
-    });
-
-    self.socket.on("deleteLocalUser", (...ids) => {
-      ids.forEach((id)  => {
-        self.users.delete(id);
-      });
-    });
+    self.socket.on("addLocalUser", (...data) => addUsers(data));
+    self.socket.on("deleteLocalUser", (id) => self.users.delete(id));
 
     self.socket.on("loadLocalLevel", (data) => {
       console.log(data);
-      //// load(lobby.rooms.get(data.id), data);
       app.view = "game";
     });
 
-    self.socket.on("loadLocalRoom", (data) => {
-      load(lobby.rooms.get(data.id), data);
-      app.view = "room";
-    });
+    self.socket.on("loadLocalRoom", (data) => load(data));
+    self.socket.on("updateLocalRoom", (data) => updateRoom(data));
+    self.socket.on("updateLocalUser", (data) => updateUser(data));
 
-    self.socket.on("updateLocalRoom", (data) => {
-      Object.assign(self, data.props);
-    });
-
-    self.socket.on("updateLocalUser", (...users) => {
-      users.forEach((data) => {
-        Object.assign(self.users.get(data.id), data.props);
-      });
-    });
-
-    self.els.leaveRoom.addEventListener("click", (e) => {
-      leaveRoom();
-    });
-
-    self.els.startGame.addEventListener("click", (e) => {
-      startGame();
-    });
+    self.els.leaveRoom.addEventListener("click", (e) => unload());
+    self.els.startGame.addEventListener("click", (e) => startGame());
   };
 
   const listUser = ({ id, name }) => {
@@ -74,24 +46,30 @@ const LocalRoom = (lobby) => {
         `</li>`);
   };
 
-  const load = (base, data) => {
-    self.base = base;
-
-    data.users.forEach((user) => {
-      addUser(user.id, user.props);
-    });
-
+  const load = (data) => {
+    self.base = lobby.rooms.get(data.id);
+    addUsers(data.users);
     Object.assign(self, data.props);
 
     const el = self.els.userList.querySelector(`[data-id="${lobby.personalUser.base.id}"]`);
     el.classList.add("personal");
+    app.view = "room";
+  };
+
+  const showUser = (user, prop) => {
+    const shownInRoom = new Set(["name"]);
+
+    if (shownInRoom.has(prop)) {
+      const el = self.els.userList.querySelector(`[data-id="${user.id}"] .${prop}`);
+      el.innerText = user[prop];
+    }
   };
 
   const startGame = () => {
     self.socket.emit("startGame");
   };
 
-  const unlistUser = (id) => {
+  const unshowUser = (id) => {
     const li = self.els.userList.querySelector(`[data-id=${id}]`);
     li.remove();
   };
@@ -102,13 +80,12 @@ const LocalRoom = (lobby) => {
     app.view = "lobby";
   };
 
-  const updateUser = (user, prop) => {
-    const shownInRoom = new Set(["name"]);
+  const updateRoom = (data) => {
+    Object.assign(self, data.props);
+  };
 
-    if (shownInRoom.has(prop)) {
-      const el = self.els.userList.querySelector(`[data-id="${user.id}"] .${prop}`);
-      el.innerText = user[prop];
-    }
+  const updateUser = (data) => {
+    Object.assign(self.users.get(data.id), data.props);
   };
 
 
@@ -123,8 +100,8 @@ const LocalRoom = (lobby) => {
       socket: lobby.socket,
       users: new Map(),
 
-      get leaveRoom () { return leaveRoom; },
-      get updateUser () { return updateUser; }
+      get showUser () { return showUser; },
+      get unload () { return unload; }
     };
 
     const p = new Proxy(properties, {
@@ -160,7 +137,7 @@ const LocalRoom = (lobby) => {
     };
 
     p.users.delete = function (id) {
-      unlistUser(id);
+      unshowUser(id);
       return Map.prototype.delete.apply(this, arguments);
     };
 

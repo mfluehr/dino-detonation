@@ -146,21 +146,21 @@ const User = (socket, lobby) => {
           }
         };
       },
-      get personalData () {
-        return {
-          id: p.id,
-          props: {
-            email: p.email
-          }
-        };
-      },
-      get roomData () {
+      get localData () {
         return {
           id: p.id,
           props: {
             id: p.id,
             name: p.name,
             //// readyToStart: p.readyToStart
+          }
+        };
+      },
+      get personalData () {
+        return {
+          id: p.id,
+          props: {
+            email: p.email
           }
         };
       }
@@ -173,7 +173,7 @@ const User = (socket, lobby) => {
 
           if (prop === "room") {
             if (val) {
-              p.socket.emit("loadLocalRoom", p.room.roomData);
+              p.socket.emit("loadLocalRoom", p.room.localData);
               p.socket.join(p.room.id);
             }
           }
@@ -193,7 +193,7 @@ const User = (socket, lobby) => {
                 p.lobby.clients.emit("updateLobbyUser", data);
               }
 
-              if (p.room && prop in p.roomData.props) {
+              if (p.room && prop in p.localData.props) {
                 p.room.clients.emit("updateLocalUser", data);
               }
             }

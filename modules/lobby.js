@@ -73,44 +73,54 @@ const Lobby = (server) => {
       get addRoom () { return addRoom; },
       get addUser () { return addUser; },
       get deleteRoom () { return deleteRoom; },
-      get deleteUser () { return deleteUser; }
+      get deleteUser () { return deleteUser; },
+
+      get lobbyData () {
+        const data = {
+          rooms: p.roomData,
+          users: p.userData
+        };
+
+        return data;
+      },
+      get roomData () {
+        const roomData = [];
+        p.rooms.forEach((room, roomId) => {
+          roomData.push(room.lobbyData);
+        });
+        return roomData;
+      },
+      get userData () {
+        const userData = [];
+        p.users.forEach((user, userId) => {
+          userData.push(user.lobbyData);
+        });
+        return userData;
+      }
     });
 
     const p = properties;
 
     p.rooms.set = function (id, room) {
-      p.clients.emit("addRoom", room.lobbyData);
+      p.clients.emit("addLobbyRoom", room.lobbyData);
       return Map.prototype.set.apply(this, arguments);
     };
 
     p.rooms.delete = function (id) {
-      p.clients.emit("deleteRoom", id);
+      p.clients.emit("deleteLobbyRoom", id);
       return Map.prototype.delete.apply(this, arguments);
     };
 
     p.users.set = function (id, user) {
-      const lobbyRooms = [],
-            lobbyUsers = [];
-
-      p.rooms.forEach((room, roomId) => {
-        lobbyRooms.push(room.lobbyData);
-      });
-      user.socket.emit("addRoom", ...lobbyRooms);
-
-      p.users.forEach((user, userId) => {
-        lobbyUsers.push(user.lobbyData);
-      });
-      user.socket.emit("addUser", ...lobbyUsers);
-
-      p.clients.emit("addUser", user.lobbyData);
+      user.socket.emit("loadLobby", p.lobbyData);
+      p.clients.emit("addLobbyUser", user.lobbyData);
       user.socket.emit("updateLobbyUser", user.personalData);
       user.socket.emit("loadPersonalUser", user.id);
-
       return Map.prototype.set.apply(this, arguments);
     };
 
     p.users.delete = function (id) {
-      p.clients.emit("deleteUser", id);
+      p.clients.emit("deleteLobbyUser", id);
       return Map.prototype.delete.apply(this, arguments);
     };
 
