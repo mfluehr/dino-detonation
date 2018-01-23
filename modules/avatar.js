@@ -29,6 +29,19 @@ const Avatar = (socket, user) => {
   const leaveRoom = () => {};
 
   const listen = () => {
+    const avatarSanitizer = {
+      rad: (rad) => {
+        rad = sanitizer.toFloat(rad);
+
+        if (!rad) {
+          throw "The user must have a name.";
+        }
+
+        return rad;
+      }
+    };
+
+
     self.socket.on("dropBomb", () => {
       dropBomb();
     });
@@ -37,19 +50,13 @@ const Avatar = (socket, user) => {
       explodeAllBombs();
     });
 
-    self.socket.on("halt", () => {
-      halt();
-    });
-
-    self.socket.on("move", (rad) => {
-      rad = sanitizer.toFloat(rad);
-      move(rad);
+    self.socket.on("updateAvatar", (data) => {
+      util.updateObject(self, avatarSanitizer, data);
     });
   };
 
   const move = (rad) => {
     ////
-    // deg = util.toInterval(deg, 90);
     rad = util.toInterval(rad, Math.PI * 1/2);
   };
 
@@ -85,8 +92,8 @@ const Avatar = (socket, user) => {
       capacity: 0,
         minCapacity: 0,
         maxCapacity: 0,
-      face: util.DIRECTIONS.bottom,
       pickups: new Set(),
+      rad: Math.PI * 1/2,
       socket,
       speed: 0,
         minSpeed: 0,
@@ -112,7 +119,21 @@ const Avatar = (socket, user) => {
         if (obj[prop] !== val) {
           obj[prop] = val;
 
-          // p.socket.emit("updateAvatar", data); ////
+          const data = {
+            id: p.id,
+            props: {
+              [prop]: val
+            }
+          };
+
+          ////
+          if (prop === "rad") {
+            console.log(prop, val);
+            rad = sanitizer.toFloat(rad);
+            // move(rad);
+          }
+
+          //// p.socket.emit("updateAvatar", data);
         }
 
         return true;

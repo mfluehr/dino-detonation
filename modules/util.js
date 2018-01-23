@@ -1,8 +1,11 @@
 "use strict";
 
+const sanitizer = require("./sanitizer");
+
 
 const util = {
   degToDirection: (deg) => {
+    ////
     const angleDirections = {
       270: util.DIRECTIONS.top,
       0: util.DIRECTIONS.right,
@@ -39,6 +42,32 @@ const util = {
   toRadians: (deg) => {
     return deg * (Math.PI / 180);
   },
+  updateObject: (obj, objectSanitizer, { prop, val }) => {
+    prop = sanitizer.toString(prop);
+    val = sanitizer.toString(val);
+
+    if (Object.getOwnPropertyDescriptor(obj, prop)) {
+      const san = objectSanitizer[prop];
+
+      if (san) {
+        try {
+          val = san(val, 20);
+          obj[prop] = val;
+        }
+        catch (err) {
+          console.warn(err);
+          obj.socket.emit("ioError", err);
+        }
+      }
+      else {
+        obj.socket.emit("ioError", `"${prop}" failed to validate.`);
+      }
+    }
+    else {
+      obj.socket.emit("ioError", `"${prop}" is not editable.`);
+    }
+  },
+
 
   Array2: (w, h, val = 0) => {
     const cols = new Array(h);
@@ -49,6 +78,7 @@ const util = {
   },
 
   DIRECTIONS: Object.freeze({
+    ////
     "top": 1,
     "right": 2,
     "bottom": 3,

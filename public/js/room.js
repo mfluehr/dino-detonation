@@ -13,10 +13,10 @@ const Room = (properties, lobby) => {
   return self;
 };
 
-const LocalRoom = (lobby) => {
+const LocalRoom = (lobby, data) => {
   const addUsers = (users) => {
     users.forEach((user) => {
-      const localUser = LocalUser(lobby.users.get(user.id), lobby);
+      const localUser = LocalUser(lobby.users.get(user.id));
       self.users.set(localUser.id, localUser);
       Object.assign(localUser, user.props);
     });
@@ -25,24 +25,24 @@ const LocalRoom = (lobby) => {
   const listenToServer = () => {
     self.socket.on("addLocalUser", (...data) => addUsers(data));
     self.socket.on("deleteLocalUser", (id) => self.users.delete(id));
-    self.socket.on("loadLocalRoom", (data) => load(data));
     self.socket.on("updateLocalRoom", (data) => updateRoom(data));
     self.socket.on("updateLocalUser", (data) => updateUser(data));
   };
 
   const listenToUser = () => {
     self.els.leaveRoom.addEventListener("click", (e) => unload());
-    self.els.startGame.addEventListener("click", (e) => startGame());
+    self.els.startGame.addEventListener("click", (e) => app.user.startGame());
   };
 
   const load = (data) => {
     self.base = lobby.rooms.get(data.id);
     addUsers(data.users);
     Object.assign(self, data.props);
+    listenToServer();
     listenToUser();
     app.view = "room";
 
-    const el = self.els.userList.querySelector(`[data-id="${lobby.personalUser.id}"]`);
+    const el = self.els.userList.querySelector(`[data-id="${app.user.id}"]`);
     el.classList.add("personal");
   };
 
@@ -62,17 +62,16 @@ const LocalRoom = (lobby) => {
     }
   };
 
-  const startGame = () => {
-    self.socket.emit("startGame");
-  };
-
   const unshowUserUpdate = (id) => {
     const li = self.els.userList.querySelector(`[data-id=${id}]`);
     li.remove();
   };
 
   const unload = () => {
+    //// unlisten to user
+
     self.socket.emit("leaveRoom");
+    self.localLevel.unload();
     self.users.clear();
     app.view = "lobby";
   };
@@ -109,7 +108,7 @@ const LocalRoom = (lobby) => {
           const el = p.els.userList.querySelector(`[data-id="${val}"]`);
           el.classList.add("owner");
 
-          if (val === lobby.personalUser.id) {
+          if (val === app.user.id) {
             p.els.startGame.classList.remove("hidden");
           }
           else {
@@ -144,7 +143,7 @@ const LocalRoom = (lobby) => {
   })();
 
 
-  listenToServer();
+  load(data);
 
 
   return self;

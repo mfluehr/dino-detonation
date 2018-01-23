@@ -27,8 +27,6 @@ const User = (socket, lobby) => {
   const listen = () => {
     const userSanitizer = {
       name: (name) => {
-        name = sanitizer.toString(name);
-
         if (!name) {
           throw "The user must have a name.";
         }
@@ -98,30 +96,8 @@ const User = (socket, lobby) => {
       }
     });
 
-    self.socket.on("updateUser", ({ prop, val }) => {
-      prop = sanitizer.toString(prop);
-
-      if (Object.getOwnPropertyDescriptor(self, prop) &&
-          Object.getOwnPropertyDescriptor(self, prop).writable) {
-        const san = userSanitizer[prop];
-
-        if (san) {
-          try {
-            val = san(val, 20);
-            self[prop] = val;
-          }
-          catch (err) {
-            console.warn(err);
-            self.socket.emit("ioError", err);
-          }
-        }
-        else {
-          self.socket.emit("ioError", `"${prop}" failed to validate.`);
-        }
-      }
-      else {
-        self.socket.emit("ioError", `"${prop}" is not editable.`);
-      }
+    self.socket.on("updateUser", (data) => {
+      util.updateObject(self, userSanitizer, data);
     });
   };
 

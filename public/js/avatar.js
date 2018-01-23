@@ -2,15 +2,30 @@
 
 
 const LocalAvatar = (user) => {
+  const listenToServer = () => {
+    self.socket.on("updateAvatar", (data) => updateAvatar(data));
+  };
+
+  const unload = () => {
+    //// unlisten to server
+  };
+
+  const updateAvatar = (data) => {
+    ////
+    console.log(data);
+  };
+
+
   const self = (() => {
     const properties = {
+      socket: app.lobby.socket,
       user
     };
 
     const p = new Proxy(properties, {
       set: (obj, prop, val) => {
         obj[prop] = val;
-        //// self.user.room.level.showAvatarUpdate(self, prop);
+        //// self.user.room.level.drawAvatarUpdate(self, prop);
         return true;
       }
     });
@@ -18,88 +33,104 @@ const LocalAvatar = (user) => {
     return p;
   })();
 
+
+  listenToServer();
+
+
   return self;
 };
 
-
 const PersonalAvatar = (user) => {
-  const endAction = (action) => {
-    action[1] = false;
+  const endAction = (e) => {
+    const action = self.actions.get(e.key);
 
-    switch (action[0]) {
-      case "moveUp":
-      case "moveRight":
-      case "moveDown":
-      case "moveLeft":
-        self.socket.emit("halt");
-        break;
+    if (action && action.on) {
+      action.on = false;
+
+      switch (action.e) {
+        case "moveUp":
+        case "moveRight":
+        case "moveDown":
+        case "moveLeft":
+          self.socket.emit("halt");
+          break;
+      }
     }
   };
 
   const listenToUser = () => {
-    document.addEventListener("keydown", (e) => {
-      const action = self.actions[e.key];
-
-      if (action && !action[1]) {
-        startAction(action);
-      }
-    });
-
-    document.addEventListener("keyup", (e) => {
-      const action = self.actions[e.key];
-
-      if (action) {
-        endAction(action);
-      }
-    });
+    document.addEventListener("keydown", (e) => startAction(e));
+    document.addEventListener("keyup", (e) => endAction(e));
   };
 
-  const startAction = (action) => {
-    console.log("start:", action[0]);
+  const load = () => {
+    listenToUser();
+  };
 
-    action[1] = true;
+  const startAction = (e) => {
+    const action = self.actions.get(e.key);
 
-    switch (action[0]) {
-      case "dropBomb":
-        self.socket.emit("dropBomb");
-        break;
-      case "moveUp":
-        // self.socket.emit("move", 270);
-        self.rad = Math.PI * 3/2;
-        break;
-      case "moveRight":
-        self.rad = 0;
-        break;
-      case "moveBottom":
-        self.rad = Math.PI * 1/2;
-        break;
-      case "moveLeft":
-        self.rad = Math.PI;
-        break;
+    if (action && !action.on) {
+      action.on = true;
+
+      switch (action.e) {
+        case "dropBomb":
+          self.socket.emit(action.e);
+          break;
+        case "moveUp":
+          self.rad = Math.PI * 3/2;
+          break;
+        case "moveRight":
+          self.rad = 0;
+          break;
+        case "moveBottom":
+          self.rad = Math.PI * 1/2;
+          break;
+        case "moveLeft":
+          self.rad = Math.PI;
+          break;
+      }
     }
+  };
+
+  const unload = () => {
+    //// unlisten to user
+    // unlisten to server
   };
 
 
   const self = (() => {
+    const editable = new Set(["rad"]);
+
     const properties = {
-      actions: {
-        " ": ["dropBomb", false],
-        "ArrowUp": ["moveUp", false],
-        "ArrowRight": ["moveRight", false],
-        "ArrowDown": ["moveDown", false],
-        "ArrowLeft": ["moveLeft", false]
-      },
+      actions: new Map([
+        [" ", {e: "dropBomb", on: false}],
+        ["ArrowUp", {e: "moveUp", on: false}],
+        ["ArrowRight", {e: "moveRight", on: false}],
+        ["ArrowDown", {e: "moveDown", on: false}],
+        ["ArrowLeft", {e: "moveLeft", on: false}]
+      ]),
       socket: user.socket,
-      user
+
+      get endAction () { return endAction; },
+      get load () { return load; },
+      get startAction () { return startAction; }
     };
 
-    const p = properties;
+    const p = new Proxy(properties, {
+      set: (obj, prop, val) => {
+        if (editable.has(prop)) {
+          p.socket.emit("updateAvatar", { prop, val });
+          return true;
+        }
+
+        obj[prop] = val;
+        return true;
+      }
+    });
 
     return p;
   })();
-
-
-  //// listenToUser();
 
 
   return self;

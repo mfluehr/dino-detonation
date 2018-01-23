@@ -8,7 +8,6 @@ const LevelOptions = () => {
     name: "testLevel",
     timer: 300,
     avatars: {
-      face: util.DIRECTIONS.bottom,
       minCapacity: 4,
       maxCapacity: 10,
       minSpeed: .4,

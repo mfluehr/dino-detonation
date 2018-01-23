@@ -13,14 +13,14 @@ const User = (properties = {}, lobby) => {
   return self;
 };
 
-const LocalUser = (base, lobby) => {
+const LocalUser = (base) => {
   const self = (() => {
     const properties = Object.assign({}, base);
 
     const p = new Proxy(properties, {
       set: (obj, prop, val) => {
         obj[prop] = val;
-        lobby.personalUser.room.showUserUpdate(p, prop);
+        app.user.room.showUserUpdate(p, prop);
         return true;
       }
     });
@@ -34,9 +34,26 @@ const LocalUser = (base, lobby) => {
 };
 
 const PersonalUser = (lobby) => {
+  const createRoom = () => {
+    const roomName = lobby.els.roomName.value;
+    self.socket.emit("addRoom", roomName);
+  };
+
+  const joinRoom = (id) => {
+    self.socket.emit("joinRoom", id);
+  };
+
   const load = (base) => {
     self.base = base;
     self.id = base.id;
+  };
+
+  const login = () => {
+    self.name = lobby.els.userName.value;
+  };
+
+  const startGame = () => {
+    self.socket.emit("startGame");
   };
 
 
@@ -44,10 +61,13 @@ const PersonalUser = (lobby) => {
     const editable = new Set(["email", "name"]);
 
     const properties = {
-      room: LocalRoom(lobby),
       socket: lobby.socket,
 
-      get load () { return load; }
+      get createRoom () { return createRoom; },
+      get joinRoom () { return joinRoom; },
+      get load () { return load; },
+      get login () { return login; },
+      get startGame () { return startGame; }
     };
 
     const p = new Proxy(properties, {

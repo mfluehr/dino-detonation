@@ -26,15 +26,6 @@ const Lobby = () => {
     });
   };
 
-  const createRoom = () => {
-    const roomName = self.els.roomName.value;
-    self.socket.emit("addRoom", roomName);
-  };
-
-  const joinRoom = (id) => {
-    self.socket.emit("joinRoom", id);
-  };
-
   const listenToServer = () => {
     self.socket.on("addLobbyRoom", (...data) => addRooms(data));
     self.socket.on("addLobbyUser", (...data) => addUsers(data));
@@ -42,6 +33,7 @@ const Lobby = () => {
     self.socket.on("deleteLobbyUser", (id) => self.users.delete(id));
     self.socket.on("disconnect", (reason) => unload());
     self.socket.on("ioError", (err) => console.warn(err));
+    self.socket.on("loadLocalRoom", (data) => loadRoom(data));
     self.socket.on("loadPersonalUser", (data) => loadPersonalUser(data));
     self.socket.on("loadLobby", (data) => load(data));
     self.socket.on("updateLobbyRoom", (data) => updateRoom(data));
@@ -49,12 +41,12 @@ const Lobby = () => {
   };
 
   const listenToUser = () => {
-    self.els.createRoom.addEventListener("click", (e) => createRoom());
-    self.els.login.addEventListener("click", (e) => login());
+    self.els.createRoom.addEventListener("click", (e) => app.user.createRoom());
+    self.els.login.addEventListener("click", (e) => app.user.login());
 
     self.els.roomList.addEventListener("click", (e) => {
       if (e.target.tagName === "A") {
-        joinRoom(e.target.dataset.id);
+        app.user.joinRoom(e.target.dataset.id);
       }
     });
   };
@@ -71,16 +63,16 @@ const Lobby = () => {
     listenToUser();
   };
 
+  const loadRoom = (data) => {
+    app.user.room = LocalRoom(self, data);
+  };
+
   const loadPersonalUser = (id) => {
     const el = self.els.userList.querySelector(`[data-id="${id}"]`);
     el.classList.add("personal");
 
-    lobby.personalUser.load(self.users.get(id));
+    app.user.load(self.users.get(id));
     app.view = "lobby";
-  };
-
-  const login = () => {
-    self.personalUser.name = self.els.userName.value;
   };
 
   const showRoom = ({ id, name, numUsers, maxUsers }) => {
@@ -132,7 +124,7 @@ const Lobby = () => {
   const unload = () => {
     self.rooms.clear();
     self.users.clear();
-    self.personalUser.room.unload();
+    app.user.room.unload();
     console.log("Lobby connection lost!");
   };
 
@@ -155,7 +147,6 @@ const Lobby = () => {
         userList: document.getElementById("lobby-view-users"),
         userName: document.getElementById("user-name")
       },
-      personalUser: {},
       socket: io.connect(app.url),
       rooms: new Map(),
       users: new Map(),
@@ -165,8 +156,6 @@ const Lobby = () => {
     });
 
     const p = properties;
-
-    p.personalUser = PersonalUser(p);
 
     p.rooms.set = function (id, room) {
       showRoom(room);

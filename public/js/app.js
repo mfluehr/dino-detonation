@@ -10,7 +10,9 @@ const App = () => {
         room: document.getElementById("room-view"),
         game: document.getElementById("game-view")
       },
+      lobby: {},
       url: "localhost:4000",
+      user: {},
       view: undefined
     });
 
@@ -41,5 +43,6 @@ const App = () => {
 };
 
 
-const app = App(),
-      lobby = Lobby();
+const app = App();
+app.lobby = Lobby();
+app.user = PersonalUser(app.lobby);
