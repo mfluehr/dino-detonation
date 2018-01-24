@@ -14,36 +14,43 @@ const Room = (properties, lobby) => {
 };
 
 const LocalRoom = (lobby, data) => {
-  const addUsers = (users) => {
-    users.forEach((user) => {
-      const localUser = LocalUser(lobby.users.get(user.id));
-      self.users.set(localUser.id, localUser);
-      Object.assign(localUser, user.props);
-    });
+  const addUser = (user) => {
+    const localUser = LocalUser(lobby.users.get(user.id), self);
+    self.users.set(localUser.id, localUser);
+    Object.assign(localUser, user.props);
+  };
+
+  const deleteUser = (id) => {
+    self.users.delete(id);
   };
 
   const listenToServer = () => {
-    self.socket.on("addLocalUser", (...data) => addUsers(data));
-    self.socket.on("deleteLocalUser", (id) => self.users.delete(id));
-    self.socket.on("updateLocalRoom", (data) => updateRoom(data));
-    self.socket.on("updateLocalUser", (data) => updateUser(data));
+    self.socket.on("addLocalUser", addUser);
+    self.socket.on("deleteLocalUser", deleteUser);
+    self.socket.on("loadLocalLevel", loadLocalLevel);
+    self.socket.on("updateLocalRoom", updateRoom);
+    self.socket.on("updateLocalUser", updateUser);
   };
 
   const listenToUser = () => {
-    self.els.leaveRoom.addEventListener("click", (e) => unload());
-    self.els.startGame.addEventListener("click", (e) => app.user.startGame());
+    self.els.leaveRoom.addEventListener("click", unload);
+    self.els.startGame.addEventListener("click", app.user.startGame);
   };
 
   const load = (data) => {
-    self.base = lobby.rooms.get(data.id);
-    addUsers(data.users);
+    data.users.forEach((user) => addUser(user));
     Object.assign(self, data.props);
-    listenToServer();
-    listenToUser();
-    app.view = "room";
 
     const el = self.els.userList.querySelector(`[data-id="${app.user.id}"]`);
     el.classList.add("personal");
+
+    listenToServer();
+    listenToUser();
+    app.view = "room";
+  };
+
+  const loadLocalLevel = (data) => {
+    self.localLevel = LocalLevel(self, data);
   };
 
   const showUser = ({ id, name }) => {
@@ -62,18 +69,41 @@ const LocalRoom = (lobby, data) => {
     }
   };
 
-  const unshowUserUpdate = (id) => {
+  const unlistenToServer = () => {
+    self.socket.off("addLocalUser", addUser);
+    self.socket.off("deleteLocalUser", deleteUser);
+    self.socket.off("loadLocalLevel", loadLocalLevel);
+    self.socket.off("updateLocalRoom", updateRoom);
+    self.socket.off("updateLocalUser", updateUser);
+  };
+
+  const unlistenToUser = () => {
+    self.els.leaveRoom.removeEventListener("click", unload);
+    self.els.startGame.removeEventListener("click", app.user.startGame);
+  };
+
+  const unshowUser = (id) => {
     const li = self.els.userList.querySelector(`[data-id=${id}]`);
     li.remove();
   };
 
   const unload = () => {
-    //// unlisten to user
-
     self.socket.emit("leaveRoom");
-    self.localLevel.unload();
-    self.users.clear();
+    unlistenToServer();
+    unlistenToUser();
+    unloadLevel();
+    unloadUsers();
     app.view = "lobby";
+  };
+
+  const unloadLevel = () => {
+    if (self.localLevel) {
+      self.localLevel.unload();
+    }
+  };
+
+  const unloadUsers = () => {
+    self.users.clear();
   };
 
   const updateRoom = (data) => {
@@ -87,7 +117,6 @@ const LocalRoom = (lobby, data) => {
 
   const self = (() => {
     const properties = {
-      base: {},
       els: {
         leaveRoom: document.getElementById("room-view-leave"),
         startGame: document.getElementById("room-view-start"),
@@ -133,11 +162,9 @@ const LocalRoom = (lobby, data) => {
     };
 
     p.users.delete = function (id) {
-      unshowUserUpdate(id);
+      unshowUser(id);
       return Map.prototype.delete.apply(this, arguments);
     };
-
-    p.localLevel = LocalLevel(p);
 
     return p;
   })();

@@ -1,17 +1,18 @@
 "use strict";
 
 
-const LocalLevel = (room) => {
+const LocalLevel = (room, data) => {
   const listenToServer = () => {
-    self.socket.on("loadLocalLevel", (data) => load(data));
+    //// self.socket.on("loadLocalLevel", load);
   };
 
   const listenToUser = () => {
-    document.addEventListener("keydown", (e) => app.user.avatar.startAction(e));
-    document.addEventListener("keyup", (e) => app.user.avatar.endAction(e));
+    document.addEventListener("keydown", app.user.avatar.startAction);
+    document.addEventListener("keyup", app.user.avatar.endAction);
   };
 
   const load = (data) => {
+    listenToServer();
     listenToUser();
     app.user.avatar.load();
     app.view = "game";
@@ -28,7 +29,6 @@ const LocalLevel = (room) => {
     const properties = {
       socket: room.socket,
 
-      get load () { return load; },
       get unload () { return unload; }
     };
 
@@ -38,7 +38,7 @@ const LocalLevel = (room) => {
   })();
 
 
-  listenToServer();
+  load(data);
 
 
   return self;

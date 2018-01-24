@@ -3,7 +3,7 @@
 
 const LocalAvatar = (user) => {
   const listenToServer = () => {
-    self.socket.on("updateAvatar", (data) => updateAvatar(data));
+    self.socket.on("updateAvatar", updateAvatar);
   };
 
   const unload = () => {
@@ -59,8 +59,8 @@ const PersonalAvatar = (user) => {
   };
 
   const listenToUser = () => {
-    document.addEventListener("keydown", (e) => startAction(e));
-    document.addEventListener("keyup", (e) => endAction(e));
+    document.addEventListener("keydown", startAction);
+    document.addEventListener("keyup", endAction);
   };
 
   const load = () => {

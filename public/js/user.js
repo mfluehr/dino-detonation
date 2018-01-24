@@ -13,14 +13,14 @@ const User = (properties = {}, lobby) => {
   return self;
 };
 
-const LocalUser = (base) => {
+const LocalUser = (base, room) => {
   const self = (() => {
     const properties = Object.assign({}, base);
 
     const p = new Proxy(properties, {
       set: (obj, prop, val) => {
         obj[prop] = val;
-        app.user.room.showUserUpdate(p, prop);
+        room.showUserUpdate(p, prop);
         return true;
       }
     });
@@ -34,11 +34,6 @@ const LocalUser = (base) => {
 };
 
 const PersonalUser = (lobby) => {
-  const createRoom = () => {
-    const roomName = lobby.els.roomName.value;
-    self.socket.emit("addRoom", roomName);
-  };
-
   const joinRoom = (id) => {
     self.socket.emit("joinRoom", id);
   };
@@ -48,11 +43,8 @@ const PersonalUser = (lobby) => {
     self.id = base.id;
   };
 
-  const login = () => {
-    self.name = lobby.els.userName.value;
-  };
-
   const startGame = () => {
+    console.log("try to start!");
     self.socket.emit("startGame");
   };
 
