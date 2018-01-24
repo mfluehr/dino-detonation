@@ -1,9 +1,9 @@
 "use strict";
 
 const Avatar = require("./avatar"),
-      util = require("./util"),
       randomName = require("./random-name"),
-      sanitizer = require("./sanitizer");
+      sanitizer = require("./sanitizer"),
+      util = require("./util");
 
 
 const User = (socket, lobby) => {
@@ -145,12 +145,10 @@ const User = (socket, lobby) => {
     const p = new Proxy(properties, {
       set: (obj, prop, val) => {
         if (obj[prop] !== val) {
-          obj[prop] = val;
-
           if (prop === "room") {
             if (val) {
-              p.socket.emit("loadLocalRoom", p.room.localData);
-              p.socket.join(p.room.id);
+              p.socket.emit("loadLocalRoom", val.localData);
+              p.socket.join(val.id);
             }
           }
           else {
@@ -174,6 +172,8 @@ const User = (socket, lobby) => {
               }
             }
           }
+
+          obj[prop] = val;
         }
 
         return true;

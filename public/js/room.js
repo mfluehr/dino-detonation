@@ -50,7 +50,7 @@ const LocalRoom = (lobby, data) => {
   };
 
   const loadLocalLevel = (data) => {
-    self.localLevel = LocalLevel(self, data);
+    self.level = LocalLevel(self, data);
   };
 
   const showUser = ({ id, name }) => {
@@ -97,8 +97,8 @@ const LocalRoom = (lobby, data) => {
   };
 
   const unloadLevel = () => {
-    if (self.localLevel) {
-      self.localLevel.unload();
+    if (self.level) {
+      self.level.unload();
     }
   };
 

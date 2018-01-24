@@ -1,7 +1,7 @@
 "use strict";
 
-const socket = require("socket.io"),
-      Room = require("./room"),
+const Room = require("./room"),
+      socket = require("socket.io"),
       User = require("./user");
 
 

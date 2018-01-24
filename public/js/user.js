@@ -44,7 +44,6 @@ const PersonalUser = (lobby) => {
   };
 
   const startGame = () => {
-    console.log("try to start!");
     self.socket.emit("startGame");
   };
 

@@ -1,9 +1,10 @@
 "use strict";
 
-const util = require("./util"),
-      Bomb = require("./bomb"),
+const Bomb = require("./bomb"),
+      now = require("performance-now"),
       //// Pickup = require("./pickup"),
-      Tile = require("./tile");
+      Tile = require("./tile"),
+      util = require("./util");
 
 
 const Level = (options, room) => {
@@ -58,6 +59,7 @@ const Level = (options, room) => {
 
     initTiles();
     initAvatars();
+    gameLoop();
   };
 
   const nearestCol = (x) => {
@@ -77,12 +79,46 @@ const Level = (options, room) => {
   };
 
 
+
+
+  const gameLoop = () => {
+    let total = 0;         // Time
+    const dt = 1 / 60;     // Delta time
+
+    let prevTime = now(),  // Time in ms
+        accumulator = 0;
+
+    // while (!self.paused) {
+      const newTime = now();
+      let delta = Math.min(newTime - prevTime, .25);
+
+      prevTime = newTime;
+      accumulator += delta;
+
+      while (accumulator >= dt) {
+        updateLevel(dt);
+        total += dt;
+        accumulator -= dt;
+      }
+    // }
+  };
+
+  const updateLevel = (dt) => {
+    // room.users.forEach((user) => {
+    //   ////
+    // });
+  };
+
+
+
+
   const self = (() => {
     const properties = Object.seal({
       bombs: [],
       homes: [],
       numCols: 0,
       numRows: 0,
+      paused: false,
       pickups: [],
       room,
       tiles: [],
@@ -100,6 +136,7 @@ const Level = (options, room) => {
           props: {
             numCols: p.numCols,
             numRows: p.numRows,
+            paused: p.paused,
             tileWidth: p.tileWidth,
             tileHeight: p.tileHeight
           },

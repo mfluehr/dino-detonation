@@ -117,7 +117,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
           obj[prop] = val;
 
           if (prop === "level") {
-            p.clients.emit("loadLocalLevel", p.level.localData);
+            p.clients.emit("loadLocalLevel", val.localData);
           }
           else {
             const data = {

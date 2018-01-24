@@ -2,17 +2,9 @@
 
 
 const LocalAvatar = (user) => {
-  const listenToServer = () => {
-    self.socket.on("updateAvatar", updateAvatar);
-  };
-
-  const unload = () => {
-    //// unlisten to server
-  };
-
   const updateAvatar = (data) => {
     ////
-    console.log(data);
+    console.log(data.props);
   };
 
 
@@ -32,9 +24,6 @@ const LocalAvatar = (user) => {
 
     return p;
   })();
-
-
-  listenToServer();
 
 
   return self;
@@ -58,13 +47,8 @@ const PersonalAvatar = (user) => {
     }
   };
 
-  const listenToUser = () => {
-    document.addEventListener("keydown", startAction);
-    document.addEventListener("keyup", endAction);
-  };
-
   const load = () => {
-    listenToUser();
+    //// listenToUser();
   };
 
   const startAction = (e) => {
@@ -83,24 +67,24 @@ const PersonalAvatar = (user) => {
         case "moveRight":
           self.rad = 0;
           break;
-        case "moveBottom":
+        case "moveDown":
           self.rad = Math.PI * 1/2;
           break;
         case "moveLeft":
           self.rad = Math.PI;
           break;
+        case "pauseGame":
+          console.log("paused:", self.level.paused);
+          self.level.paused = !self.level.paused;
+          // self.socket.emit(action.e);
+          break;
       }
     }
   };
 
-  const unload = () => {
-    //// unlisten to user
-    // unlisten to server
-  };
-
 
   const self = (() => {
-    const editable = new Set(["rad"]);
+    const editable = new Set(["paused", "rad"]);
 
     const properties = {
       actions: new Map([
@@ -108,13 +92,17 @@ const PersonalAvatar = (user) => {
         ["ArrowUp", {e: "moveUp", on: false}],
         ["ArrowRight", {e: "moveRight", on: false}],
         ["ArrowDown", {e: "moveDown", on: false}],
-        ["ArrowLeft", {e: "moveLeft", on: false}]
+        ["ArrowLeft", {e: "moveLeft", on: false}],
+        ["p", {e: "pauseGame", on: false}]
       ]),
       socket: user.socket,
+      user,
 
       get endAction () { return endAction; },
       get load () { return load; },
-      get startAction () { return startAction; }
+      get startAction () { return startAction; },
+
+      get level () { return self.user.room.level; }
     };
 
     const p = new Proxy(properties, {
