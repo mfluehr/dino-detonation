@@ -6,13 +6,14 @@ const sanitizer = require("./sanitizer"),
 
 const Avatar = (socket, user) => {
   const dropBomb = () => {
-    //// self.room.level.addBomb(self.user.id);
     console.log("Drop");
 
     if (self.bombsUsed < self.capacity) {
-    //   if (self.user.room.level.addBomb(self.user.id, x, y)) {
-    //     self.bombsUsed ++;
-    //   }
+      // const x = col * tileSize,
+      //       y = row * tileSize;
+      // if (self.user.room.level.addBomb(self.user.id, x, y)) {
+      //   self.bombsUsed ++;
+      // }
     }
   };
 
@@ -31,25 +32,19 @@ const Avatar = (socket, user) => {
   const listen = () => {
     self.socket.on("dropBomb", dropBomb);
     self.socket.on("explodeAllBombs", explodeAllBombs);
-    self.socket.on("pauseGame", pauseGame);
     self.socket.on("updateAvatar", update);
+    self.socket.on("updateLevel", updateLevel);
   };
 
-  const move = (rad) => {
+  const move = (s) => {
     ////
-    rad = util.toInterval(rad, Math.PI * 1/2);
-  };
-
-  const pauseGame = (paused) => {
-    console.log("PAUSE!", paused);
-    // self.user.level.pause();
+    // rad = util.toInterval(rad, Math.PI * 1/2);
   };
 
   const spawn = (level) => {
-    const room = level.room,
-          home = level.homes.shift(),
-          avatarOptions = room.levelOptions.avatars,
-          bombOptions = room.levelOptions.bombs;
+    const home = level.homes.shift(),
+          avatarOptions = level.room.levelOptions.avatars,
+          bombOptions = level.room.levelOptions.bombs;
 
     Object.assign(self, avatarOptions, {
       x: home[0],
@@ -69,9 +64,13 @@ const Avatar = (socket, user) => {
     util.updateObject(self, avatarSanitizer, data);
   };
 
+  const updateLevel = (data) => {
+    console.log(data);
+    // self.user.room.level.update(data);
+  };
+
 
   const avatarSanitizer = {
-    paused: (paused) => sanitizer.toBoolean(paused),
     rad: (rad) => sanitizer.toFloat(rad)
   };
 
@@ -87,6 +86,7 @@ const Avatar = (socket, user) => {
       capacity: 0,
         minCapacity: 0,
         maxCapacity: 0,
+      level: undefined,
       pickups: new Set(),
       rad: Math.PI * 1/2,
       socket,
@@ -106,30 +106,26 @@ const Avatar = (socket, user) => {
       user,
 
       get leaveRoom () { return leaveRoom; },
+      get move () { return move; },
       get spawn () { return spawn; }
     });
 
     const p = new Proxy(properties, {
       set: (obj, prop, val) => {
         if (obj[prop] !== val) {
-          if (prop === "paused") {
-            pauseGame(val);
-          }
-          else if (prop === "rad") {
+          if (prop === "rad") {
             console.log(prop, val);
             //// move();
           }
-          else {
-            const data = {
-              id: p.id,
-              props: {
-                [prop]: val
-              }
-            };
 
-            p.user.room.clients.emit("updateAvatar", data);
-          }
+          const data = {
+            id: p.id,
+            props: {
+              [prop]: val
+            }
+          };
 
+          p.user.room.clients.emit("updateAvatar", data);
           obj[prop] = val;
         }
 

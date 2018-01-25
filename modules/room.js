@@ -21,7 +21,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
 
     if (self.level) {
       //// TODO: dynamic adding of avatars
-      //// self.level.addUser(user);
+      // self.level.addUser(user);
     }
 
     self.users.set(id, user);
@@ -39,7 +39,7 @@ const Room = (name = "New Room", lobby, ownerId) => {
     user.room = undefined;
 
     if (self.users.size === 0) {
-      self.lobby.deleteRoom(self.id);
+      unload();
     }
     else if (id === self.ownerId) {
       const it = self.users.keys();
@@ -49,6 +49,14 @@ const Room = (name = "New Room", lobby, ownerId) => {
 
   const startGame = () => {
     self.level = Level(self.levelOptions, self);
+  };
+
+  const unload = () => {
+    if (self.level) {
+      self.level.unload();
+    }
+
+    self.lobby.deleteRoom(self.id);
   };
 
 

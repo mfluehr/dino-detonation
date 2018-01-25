@@ -18,7 +18,7 @@ const Level = (options, room) => {
 
     if (tileOpenAt(x, y)) {
       self.bombs.push(bomb);
-      return bomb;
+      return true;
     }
 
     return false;
@@ -33,6 +33,20 @@ const Level = (options, room) => {
     //
     // avatar.kill();
     // users.avatars.delete(avatar);  // TODO: only delete once animation completed
+  };
+
+  const gameLoop = () => {
+    const tick = ({ intervalTime: delta }) => {
+      const s = delta / 1000000000;
+
+      if (!self.paused) {
+        console.log(s);
+        self.room.users.forEach((user) => user.avatar.move(s));
+      }
+    };
+
+
+    self.timer.setInterval(tick, [self.timer], "1s");
   };
 
   const load = (name) => {
@@ -78,22 +92,18 @@ const Level = (options, room) => {
     return nearestRow(y) * self.tileHeight;
   };
 
-
-
-
-  const gameLoop = () => {
-    const timer = new NanoTimer();
-    timer.setInterval(tick, "", "1s");
+  const unload = () => {
+    self.timer.clearInterval();
   };
 
-  const tick = (dt) => {
-    console.log("tick");
-    // room.users.forEach((user) => {
-    //   ////
-    // });
+  const update = (data) => {
+    util.updateObject(self, levelSanitizer, data);
   };
 
 
+  const levelSanitizer = {
+    paused: (paused) => sanitizer.toBoolean(paused)
+  };
 
 
   const self = (() => {
@@ -108,11 +118,13 @@ const Level = (options, room) => {
       tiles: [],
       tileWidth: 80,
       tileHeight: 80,
+      timer: new NanoTimer(),
 
       get addBomb () { return addBomb; },
       get addUser () { return resetUser; },
       get deleteUser () { return deleteUser; },
       get load () { return load; },
+      get unload () { return unload; },
 
       get localData () {
         return {

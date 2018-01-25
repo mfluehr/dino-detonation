@@ -101,6 +101,10 @@ const User = (socket, lobby) => {
     });
   };
 
+  const unload = () => {
+    //// TODO: need to unlisten??
+  };
+
 
   const self = (() => {
     const properties = Object.seal({

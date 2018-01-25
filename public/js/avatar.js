@@ -74,9 +74,7 @@ const PersonalAvatar = (user) => {
           self.rad = Math.PI;
           break;
         case "pauseGame":
-          console.log("paused:", self.level.paused);
           self.level.paused = !self.level.paused;
-          // self.socket.emit(action.e);
           break;
       }
     }
@@ -84,7 +82,7 @@ const PersonalAvatar = (user) => {
 
 
   const self = (() => {
-    const editable = new Set(["paused", "rad"]);
+    const editable = new Set(["rad"]);
 
     const properties = {
       actions: new Map([

@@ -44,6 +44,8 @@ const LocalLevel = (room, data) => {
 
 
   const self = (() => {
+    const editable = new Set(["paused"]);
+
     const properties = {
       room,
       socket: room.socket,
@@ -51,7 +53,17 @@ const LocalLevel = (room, data) => {
       get unload () { return unload; }
     };
 
-    const p = properties;
+    const p = new Proxy(properties, {
+      set: (obj, prop, val) => {
+        if (editable.has(prop)) {
+          p.socket.emit("updateLevel", { prop, val });
+          return true;
+        }
+
+        obj[prop] = val;
+        return true;
+      }
+    });
 
     return p;
   })();
