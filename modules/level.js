@@ -1,7 +1,7 @@
 "use strict";
 
 const Bomb = require("./bomb"),
-      now = require("performance-now"),
+      NanoTimer = require('nanotimer'),
       //// Pickup = require("./pickup"),
       Tile = require("./tile"),
       util = require("./util");
@@ -82,28 +82,12 @@ const Level = (options, room) => {
 
 
   const gameLoop = () => {
-    let total = 0;         // Time
-    const dt = 1 / 60;     // Delta time
-
-    let prevTime = now(),  // Time in ms
-        accumulator = 0;
-
-    // while (!self.paused) {
-      const newTime = now();
-      let delta = Math.min(newTime - prevTime, .25);
-
-      prevTime = newTime;
-      accumulator += delta;
-
-      while (accumulator >= dt) {
-        updateLevel(dt);
-        total += dt;
-        accumulator -= dt;
-      }
-    // }
+    const timer = new NanoTimer();
+    timer.setInterval(tick, "", "1s");
   };
 
-  const updateLevel = (dt) => {
+  const tick = (dt) => {
+    console.log("tick");
     // room.users.forEach((user) => {
     //   ////
     // });
