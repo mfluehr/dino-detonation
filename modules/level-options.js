@@ -10,12 +10,12 @@ const LevelOptions = () => {
     avatars: {
       minCapacity: 4,
       maxCapacity: 10,
-      minSpeed: .4,
-      maxSpeed: 1.2
+      minSpeedLimit: .4,
+      maxSpeedLimit: 1.2
     },
     bombs: {
       range: 4,
-      speed: .8,
+      speedLimit: .8,
       timer: 2
     },
     pickups: {

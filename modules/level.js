@@ -40,8 +40,7 @@ const Level = (options, room) => {
       const s = delta / 1000000000;
 
       if (!self.paused) {
-        console.log(s);
-        self.room.users.forEach((user) => user.avatar.move(s));
+        self.room.users.forEach((user) => user.avatar.tick(s));
       }
     };
 
@@ -148,7 +147,23 @@ const Level = (options, room) => {
       }
     });
 
-    const p = properties;
+    const p = new Proxy(properties, {
+      set: (obj, prop, val) => {
+        if (obj[prop] !== val) {
+          const data = {
+            id: p.id,
+            props: {
+              [prop]: val
+            }
+          };
+
+          //// p.user.room.clients.emit("updateLevel", data);
+          obj[prop] = val;
+        }
+
+        return true;
+      }
+    });
 
     return p;
   })();

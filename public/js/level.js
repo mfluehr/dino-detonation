@@ -2,6 +2,38 @@
 
 
 const LocalLevel = (room, data) => {
+  const initCanvas = () => {
+    const initSprites = () => {
+      const sprite = new PIXI.Sprite(
+        PIXI.loader.resources["images/avatar.png"].texture
+      );
+
+      sprites.set("avatar", sprite);
+      gfx.stage.addChild(sprites.get("avatar"));
+    };
+
+
+    const imageFiles = [
+            "images/avatar.png"
+          ],
+          pixiOptions = {
+            width: 256,
+            height: 256
+          },
+          sprites = new Map();
+
+    const gfx = new PIXI.Application(pixiOptions);
+    gfx.renderer.backgroundColor = 0x4444BB;
+
+    PIXI.loader.add(imageFiles).load(initSprites);
+    app.els.game.appendChild(gfx.view);
+  };
+
+
+
+
+
+
   const listenToServer = () => {
     self.socket.on("updateAvatar", updateAvatar);
   };
@@ -12,13 +44,16 @@ const LocalLevel = (room, data) => {
   };
 
   const load = (data) => {
-    console.log("load", data);
-
     Object.assign(self, data.props);
     listenToServer();
     listenToUser();
     app.user.avatar.load();
     app.view = "game";
+
+    ////
+    // tiles
+
+    initCanvas();
   };
 
   const unlistenToServer = () => {
@@ -37,9 +72,8 @@ const LocalLevel = (room, data) => {
   };
 
   const updateAvatar = (data) => {
-    console.log("updateAvatar", data);
-
-    const avatar = self.room.users.get(data.id);
+    const avatar = self.room.users.get(data.id).avatar;
+    avatar.update(data);
   };
 
 

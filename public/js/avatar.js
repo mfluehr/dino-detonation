@@ -2,22 +2,25 @@
 
 
 const LocalAvatar = (user) => {
-  const updateAvatar = (data) => {
+  const update = (data) => {
     ////
     console.log(data.props);
+
+    Object.assign(self, data.props);
   };
 
 
   const self = (() => {
     const properties = {
       socket: app.lobby.socket,
-      user
+      user,
+
+      get update () { return update; }
     };
 
     const p = new Proxy(properties, {
       set: (obj, prop, val) => {
         obj[prop] = val;
-        //// self.user.room.level.drawAvatarUpdate(self, prop);
         return true;
       }
     });
@@ -41,7 +44,7 @@ const PersonalAvatar = (user) => {
         case "moveRight":
         case "moveDown":
         case "moveLeft":
-          self.socket.emit("halt");
+          self.speed = 0;
           break;
       }
     }
@@ -62,16 +65,24 @@ const PersonalAvatar = (user) => {
           self.socket.emit(action.e);
           break;
         case "moveUp":
+          console.log("up");
           self.rad = Math.PI * 3/2;
+          self.speed = 100;
           break;
         case "moveRight":
+          console.log("right");
           self.rad = 0;
+          self.speed = 100;
           break;
         case "moveDown":
+          console.log("down");
           self.rad = Math.PI * 1/2;
+          self.speed = 100;
           break;
         case "moveLeft":
+          console.log("left");
           self.rad = Math.PI;
+          self.speed = 100;
           break;
         case "pauseGame":
           self.level.paused = !self.level.paused;
@@ -82,7 +93,7 @@ const PersonalAvatar = (user) => {
 
 
   const self = (() => {
-    const editable = new Set(["rad"]);
+    const editable = new Set(["rad", "speed"]);
 
     const properties = {
       actions: new Map([

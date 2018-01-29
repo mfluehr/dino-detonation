@@ -36,11 +36,6 @@ const Avatar = (socket, user) => {
     self.socket.on("updateLevel", updateLevel);
   };
 
-  const move = (s) => {
-    ////
-    // rad = util.toInterval(rad, Math.PI * 1/2);
-  };
-
   const spawn = (level) => {
     const home = level.homes.shift(),
           avatarOptions = level.room.levelOptions.avatars,
@@ -54,10 +49,15 @@ const Avatar = (socket, user) => {
         bombTimer: bombOptions.timer,
         bombsUsed: 0,
       capacity: avatarOptions.minCapacity,
-      speed: avatarOptions.minSpeed
+      speed: 0
     });
 
     self.pickups.clear();
+  };
+
+  const tick = (s) => {
+    self.x += Math.cos(self.rad) * self.speed * s;
+    self.y += Math.sin(self.rad) * self.speed * s;
   };
 
   const update = (data) => {
@@ -71,7 +71,17 @@ const Avatar = (socket, user) => {
 
 
   const avatarSanitizer = {
-    rad: (rad) => sanitizer.toFloat(rad)
+    rad: (rad) => {
+      rad = sanitizer.toFloat(rad);
+      rad = util.toInterval(rad, Math.PI * 1/2);
+      return rad;
+    },
+    speed: (ratio) => {
+      ratio = sanitizer.toFloat(ratio);
+      ratio = Math.abs(ratio);
+      ratio = Math.min(1, ratio);
+      return ratio;
+    }
   };
 
 
@@ -91,8 +101,8 @@ const Avatar = (socket, user) => {
       rad: Math.PI * 1/2,
       socket,
       speed: 0,
-        minSpeed: 0,
-        maxSpeed: 0,
+        minSpeedLimit: 0,
+        maxSpeedLimit: 0,
       stats: {
         blocksDestroyed: 0,
         bombsDropped: 0,
@@ -106,20 +116,15 @@ const Avatar = (socket, user) => {
       user,
 
       get leaveRoom () { return leaveRoom; },
-      get move () { return move; },
-      get spawn () { return spawn; }
+      get spawn () { return spawn; },
+      get tick () { return tick; }
     });
 
     const p = new Proxy(properties, {
       set: (obj, prop, val) => {
         if (obj[prop] !== val) {
-          if (prop === "rad") {
-            console.log(prop, val);
-            //// move();
-          }
-
           const data = {
-            id: p.id,
+            id: p.user.id,
             props: {
               [prop]: val
             }
