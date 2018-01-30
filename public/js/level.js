@@ -4,29 +4,69 @@
 const LocalLevel = (room, data) => {
   const initCanvas = () => {
     const initSprites = () => {
-      const sprite = new PIXI.Sprite(
-        PIXI.loader.resources["images/avatar.png"].texture
+      const avatar = new PIXI.Sprite(
+        PIXI.loader.resources.avatar.texture
       );
 
-      sprites.set("avatar", sprite);
-      gfx.stage.addChild(sprites.get("avatar"));
+      self.sprites.set("avatar", avatar);
+      gfx.stage.addChild(self.sprites.get("avatar"));
+      gfx.ticker.add(delta => gameLoop(delta));
+    };
+
+    const initText = () => {
+      const style = new PIXI.TextStyle({
+        fill: "yellow",
+        fontSize: 16
+      });
+
+      msg = new PIXI.Text("...", style);
+      msg.position.set(5, 5);
+      gfx.stage.addChild(msg);
     };
 
 
     const imageFiles = [
-            "images/avatar.png"
+            { name: "avatar", url: "images/avatar.png" }
           ],
           pixiOptions = {
-            width: 256,
-            height: 256
-          },
-          sprites = new Map();
+            width: 600,
+            height: 600
+          };
 
-    const gfx = new PIXI.Application(pixiOptions);
-    gfx.renderer.backgroundColor = 0x4444BB;
+    gfx = new PIXI.Application(pixiOptions);
+    gfx.renderer.backgroundColor = 0x5555BB;
 
-    PIXI.loader.add(imageFiles).load(initSprites);
+    initText();
+
+    PIXI.loader.add(imageFiles)
+        //// .on("progress", spriteProgress)
+        .load(initSprites);
     app.els.game.appendChild(gfx.view);
+  };
+
+  const draw = () => {
+    const z = self.room.users.get(app.user.id).avatar;
+
+    msg.text = `${Math.round(z.x)},${Math.round(z.y)} @ ${z.speed}`;
+
+    room.users.forEach((user) => {
+      const avatar = user.avatar;
+      self.sprites.get("avatar").position.set(avatar.x, avatar.y);
+    });
+  };
+
+  const gameLoop = (delta) => {
+    interpolate(delta);
+    draw();
+  };
+
+  const interpolate = (delta) => {
+    ////
+    const ms = delta / 60 * 1000;
+
+    room.users.forEach((user) => {
+      user.avatar.tick(ms);
+    });
   };
 
 
@@ -34,8 +74,9 @@ const LocalLevel = (room, data) => {
 
 
 
+
   const listenToServer = () => {
-    self.socket.on("updateAvatar", updateAvatar);
+    ////
   };
 
   const listenToUser = () => {
@@ -47,17 +88,17 @@ const LocalLevel = (room, data) => {
     Object.assign(self, data.props);
     listenToServer();
     listenToUser();
-    app.user.avatar.load();
-    app.view = "game";
 
     ////
     // tiles
 
     initCanvas();
+    app.user.avatar.load();
+    app.view = "game";
   };
 
   const unlistenToServer = () => {
-    self.socket.off("updateAvatar", updateAvatar);
+    ////
   };
 
   const unlistenToUser = () => {
@@ -66,15 +107,15 @@ const LocalLevel = (room, data) => {
   };
 
   const unload = () => {
+    gfx.ticker.destroy();
     unlistenToServer();
     unlistenToUser();
     app.view = "room";
   };
 
-  const updateAvatar = (data) => {
-    const avatar = self.room.users.get(data.id).avatar;
-    avatar.update(data);
-  };
+
+  let gfx,
+      msg;
 
 
   const self = (() => {
@@ -83,6 +124,7 @@ const LocalLevel = (room, data) => {
     const properties = {
       room,
       socket: room.socket,
+      sprites: new Map(),
 
       get unload () { return unload; }
     };
@@ -90,7 +132,7 @@ const LocalLevel = (room, data) => {
     const p = new Proxy(properties, {
       set: (obj, prop, val) => {
         if (editable.has(prop)) {
-          p.socket.emit("updateLevel", { prop, val });
+          p.socket.emit("syncLevel", { prop, val });
           return true;
         }
 

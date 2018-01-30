@@ -114,7 +114,7 @@ const Lobby = (server) => {
     p.users.set = function (id, user) {
       user.socket.emit("loadLobby", p.lobbyData);
       p.clients.emit("addLobbyUser", user.lobbyData);
-      user.socket.emit("updateLobbyUser", user.personalData);
+      user.socket.emit("syncLobbyUser", user.personalData);
       user.socket.emit("loadPersonalUser", user.id);
       return Map.prototype.set.apply(this, arguments);
     };

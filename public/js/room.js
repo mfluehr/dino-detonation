@@ -14,10 +14,11 @@ const Room = (properties, lobby) => {
 };
 
 const LocalRoom = (lobby, data) => {
-  const addUser = (user) => {
-    const localUser = LocalUser(lobby.users.get(user.id), self);
+  const addUser = (data) => {
+    const localUser = LocalUser(lobby.users.get(data.id), self);
     self.users.set(localUser.id, localUser);
-    Object.assign(localUser, user.props);
+    Object.assign(localUser, data.props);
+    Object.assign(localUser.avatar, data.avatar.props);
   };
 
   const deleteUser = (id) => {
@@ -28,8 +29,9 @@ const LocalRoom = (lobby, data) => {
     self.socket.on("addLocalUser", addUser);
     self.socket.on("deleteLocalUser", deleteUser);
     self.socket.on("loadLocalLevel", loadLocalLevel);
-    self.socket.on("updateLocalRoom", updateRoom);
-    self.socket.on("updateLocalUser", updateUser);
+    self.socket.on("syncAvatar", syncAvatar);
+    self.socket.on("syncLocalRoom", syncRoom);
+    self.socket.on("syncLocalUser", syncUser);
   };
 
   const listenToUser = () => {
@@ -38,6 +40,7 @@ const LocalRoom = (lobby, data) => {
   };
 
   const load = (data) => {
+    app.user.room = self;
     data.users.forEach((user) => addUser(user));
     Object.assign(self, data.props);
 
@@ -69,12 +72,25 @@ const LocalRoom = (lobby, data) => {
     }
   };
 
+  const syncAvatar = (data) => {
+    self.users.get(data.id).avatar.sync(data);
+  };
+
+  const syncRoom = (data) => {
+    Object.assign(self, data.props);
+  };
+
+  const syncUser = (data) => {
+    Object.assign(self.users.get(data.id), data.props);
+  };
+
   const unlistenToServer = () => {
     self.socket.off("addLocalUser", addUser);
     self.socket.off("deleteLocalUser", deleteUser);
     self.socket.off("loadLocalLevel", loadLocalLevel);
-    self.socket.off("updateLocalRoom", updateRoom);
-    self.socket.off("updateLocalUser", updateUser);
+    self.socket.off("syncAvatar", syncAvatar);
+    self.socket.off("syncLocalRoom", syncRoom);
+    self.socket.off("syncLocalUser", syncUser);
   };
 
   const unlistenToUser = () => {
@@ -104,14 +120,6 @@ const LocalRoom = (lobby, data) => {
 
   const unloadUsers = () => {
     self.users.clear();
-  };
-
-  const updateRoom = (data) => {
-    Object.assign(self, data.props);
-  };
-
-  const updateUser = (data) => {
-    Object.assign(self.users.get(data.id), data.props);
   };
 
 

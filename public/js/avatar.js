@@ -2,11 +2,13 @@
 
 
 const LocalAvatar = (user) => {
-  const update = (data) => {
-    ////
-    console.log(data.props);
-
+  const sync = (data) => {
     Object.assign(self, data.props);
+  };
+
+  const tick = (ms) => {
+    self.x += Math.cos(self.rad) * self.speed * ms;
+    self.y += Math.sin(self.rad) * self.speed * ms;
   };
 
 
@@ -15,7 +17,8 @@ const LocalAvatar = (user) => {
       socket: app.lobby.socket,
       user,
 
-      get update () { return update; }
+      get sync () { return sync; },
+      get tick () { return tick; }
     };
 
     const p = new Proxy(properties, {
@@ -34,55 +37,56 @@ const LocalAvatar = (user) => {
 
 const PersonalAvatar = (user) => {
   const endAction = (e) => {
-    const action = self.actions.get(e.key);
+    const a = self.input.get(e.key);
 
-    if (action && action.on) {
-      action.on = false;
+    if (a && self.actions.has(a)) {
+      self.actions.delete(a);
 
-      switch (action.e) {
+      switch (a) {
         case "moveUp":
         case "moveRight":
         case "moveDown":
         case "moveLeft":
-          self.speed = 0;
+          if (!self.actions.has("moveUp") &&
+              !self.actions.has("moveRight") &&
+              !self.actions.has("moveDown") &&
+              !self.actions.has("moveLeft")) {
+            self.speed = 0;
+          }
           break;
       }
     }
   };
 
   const load = () => {
-    //// listenToUser();
+    self.local = user.room.users.get(user.id).avatar;
   };
 
   const startAction = (e) => {
-    const action = self.actions.get(e.key);
+    const a = self.input.get(e.key);
 
-    if (action && !action.on) {
-      action.on = true;
+    if (a && !self.actions.has(a)) {
+      self.actions.add(a);
 
-      switch (action.e) {
+      switch (a) {
         case "dropBomb":
-          self.socket.emit(action.e);
+          self.socket.emit(a);
           break;
         case "moveUp":
-          console.log("up");
           self.rad = Math.PI * 3/2;
-          self.speed = 100;
+          self.speed = self.local.speedLimit;
           break;
         case "moveRight":
-          console.log("right");
           self.rad = 0;
-          self.speed = 100;
+          self.speed = self.local.speedLimit;
           break;
         case "moveDown":
-          console.log("down");
           self.rad = Math.PI * 1/2;
-          self.speed = 100;
+          self.speed = self.local.speedLimit;
           break;
         case "moveLeft":
-          console.log("left");
           self.rad = Math.PI;
-          self.speed = 100;
+          self.speed = self.local.speedLimit;
           break;
         case "pauseGame":
           self.level.paused = !self.level.paused;
@@ -96,13 +100,14 @@ const PersonalAvatar = (user) => {
     const editable = new Set(["rad", "speed"]);
 
     const properties = {
-      actions: new Map([
-        [" ", {e: "dropBomb", on: false}],
-        ["ArrowUp", {e: "moveUp", on: false}],
-        ["ArrowRight", {e: "moveRight", on: false}],
-        ["ArrowDown", {e: "moveDown", on: false}],
-        ["ArrowLeft", {e: "moveLeft", on: false}],
-        ["p", {e: "pauseGame", on: false}]
+      actions: new Set(),
+      input: new Map([
+        [" ", "dropBomb"],
+        ["ArrowUp", "moveUp"],
+        ["ArrowRight", "moveRight"],
+        ["ArrowDown", "moveDown"],
+        ["ArrowLeft", "moveLeft"],
+        ["p", "pauseGame"]
       ]),
       socket: user.socket,
       user,
@@ -117,7 +122,8 @@ const PersonalAvatar = (user) => {
     const p = new Proxy(properties, {
       set: (obj, prop, val) => {
         if (editable.has(prop)) {
-          p.socket.emit("updateAvatar", { prop, val });
+          p.socket.emit("syncAvatar", { prop, val });
+          self.local[prop] = val;
           return true;
         }
 

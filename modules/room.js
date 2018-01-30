@@ -136,11 +136,11 @@ const Room = (name = "New Room", lobby, ownerId) => {
             };
 
             if (prop in p.lobbyData.props) {
-              p.lobby.clients.emit("updateLobbyRoom", data);
+              p.lobby.clients.emit("syncLobbyRoom", data);
             }
 
             if (prop in p.localData.props) {
-              p.clients.emit("updateLocalRoom", data);
+              p.clients.emit("syncLocalRoom", data);
             }
           }
         }

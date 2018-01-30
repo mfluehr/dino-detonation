@@ -96,8 +96,8 @@ const User = (socket, lobby) => {
       }
     });
 
-    self.socket.on("updateUser", (data) => {
-      util.updateObject(self, userSanitizer, data);
+    self.socket.on("syncUser", (data) => {
+      util.syncObject(self, userSanitizer, data);
     });
   };
 
@@ -117,6 +117,9 @@ const User = (socket, lobby) => {
       name: randomName(),
       room: undefined,
 
+      get avatarData () {
+        return p.avatar.localData;
+      },
       get lobbyData () {
         return {
           id: p.id,
@@ -128,6 +131,7 @@ const User = (socket, lobby) => {
       },
       get localData () {
         return {
+          avatar: p.avatarData,
           id: p.id,
           props: {
             id: p.id,
@@ -164,15 +168,15 @@ const User = (socket, lobby) => {
             };
 
             if (prop in p.personalData.props) {
-              p.socket.emit("updateLobbyUser", data);
+              p.socket.emit("syncLobbyUser", data);
             }
             else {
               if (prop in p.lobbyData.props) {
-                p.lobby.clients.emit("updateLobbyUser", data);
+                p.lobby.clients.emit("syncLobbyUser", data);
               }
 
               if (p.room && prop in p.localData.props) {
-                p.room.clients.emit("updateLocalUser", data);
+                p.room.clients.emit("syncLocalUser", data);
               }
             }
           }

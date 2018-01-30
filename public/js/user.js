@@ -38,9 +38,8 @@ const PersonalUser = (lobby) => {
     self.socket.emit("joinRoom", id);
   };
 
-  const load = (base) => {
-    self.base = base;
-    self.id = base.id;
+  const load = (id) => {
+    self.id = id;
   };
 
   const startGame = () => {
@@ -64,7 +63,7 @@ const PersonalUser = (lobby) => {
     const p = new Proxy(properties, {
       set: (obj, prop, val) => {
         if (editable.has(prop)) {
-          p.socket.emit("updateUser", { prop, val });
+          p.socket.emit("syncUser", { prop, val });
           return true;
         }
 

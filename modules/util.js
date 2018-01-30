@@ -33,16 +33,7 @@ const util = {
 
     Object.defineProperties(obj, props);
   },
-  toDegrees: (rad) => {
-    return rad * (180 / Math.PI);
-  },
-  toInterval: (num, interval) => {
-    return Math.round(num / interval) * interval;
-  },
-  toRadians: (deg) => {
-    return deg * (Math.PI / 180);
-  },
-  updateObject: (obj, objectSanitizer, { prop, val }) => {
+  syncObject: (obj, objectSanitizer, { prop, val }) => {
     prop = sanitizer.toString(prop);
     val = sanitizer.toString(val);
 
@@ -66,6 +57,15 @@ const util = {
     else {
       obj.socket.emit("ioError", `"${prop}" is not editable.`);
     }
+  },
+  toDegrees: (rad) => {
+    return rad * (180 / Math.PI);
+  },
+  toInterval: (num, interval) => {
+    return Math.round(num / interval) * interval;
+  },
+  toRadians: (deg) => {
+    return deg * (Math.PI / 180);
   },
 
 

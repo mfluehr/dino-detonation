@@ -32,8 +32,8 @@ const Avatar = (socket, user) => {
   const listen = () => {
     self.socket.on("dropBomb", dropBomb);
     self.socket.on("explodeAllBombs", explodeAllBombs);
-    self.socket.on("updateAvatar", update);
-    self.socket.on("updateLevel", updateLevel);
+    self.socket.on("syncAvatar", sync);
+    self.socket.on("syncLevel", syncLevel);
   };
 
   const spawn = (level) => {
@@ -45,28 +45,29 @@ const Avatar = (socket, user) => {
       x: home[0],
       y: home[1],
       bombRange: bombOptions.range,
-        bombSpeed: bombOptions.speed,
+        bombSpeed: bombOptions.speedLimit,
         bombTimer: bombOptions.timer,
         bombsUsed: 0,
       capacity: avatarOptions.minCapacity,
-      speed: 0
+      speed: 0,
+      speedLimit: avatarOptions.minSpeedLimit
     });
 
     self.pickups.clear();
   };
 
-  const tick = (s) => {
-    self.x += Math.cos(self.rad) * self.speed * s;
-    self.y += Math.sin(self.rad) * self.speed * s;
+  const sync = (data) => {
+    util.syncObject(self, avatarSanitizer, data);
   };
 
-  const update = (data) => {
-    util.updateObject(self, avatarSanitizer, data);
+  const syncLevel = (data) => {
+    ////console.log(data);
+    // self.user.room.level.sync(data);
   };
 
-  const updateLevel = (data) => {
-    console.log(data);
-    // self.user.room.level.update(data);
+  const tick = (ms) => {
+    self.x += Math.cos(self.rad) * self.speed * ms;
+    self.y += Math.sin(self.rad) * self.speed * ms;
   };
 
 
@@ -79,7 +80,7 @@ const Avatar = (socket, user) => {
     speed: (ratio) => {
       ratio = sanitizer.toFloat(ratio);
       ratio = Math.abs(ratio);
-      ratio = Math.min(1, ratio);
+      ratio = Math.min(self.speedLimit, ratio);
       return ratio;
     }
   };
@@ -101,6 +102,7 @@ const Avatar = (socket, user) => {
       rad: Math.PI * 1/2,
       socket,
       speed: 0,
+        speedLimit: 0,
         minSpeedLimit: 0,
         maxSpeedLimit: 0,
       stats: {
@@ -117,7 +119,20 @@ const Avatar = (socket, user) => {
 
       get leaveRoom () { return leaveRoom; },
       get spawn () { return spawn; },
-      get tick () { return tick; }
+      get tick () { return tick; },
+
+      get localData () {
+        return {
+          props: {
+            x: p.x,
+            y: p.y,
+            capacity: p.capacity,
+            rad: p.rad,
+            speed: p.speed,
+              speedLimit: p.speedLimit
+          }
+        };
+      }
     });
 
     const p = new Proxy(properties, {
@@ -130,7 +145,7 @@ const Avatar = (socket, user) => {
             }
           };
 
-          p.user.room.clients.emit("updateAvatar", data);
+          p.user.room.clients.emit("syncAvatar", data);
           obj[prop] = val;
         }
 

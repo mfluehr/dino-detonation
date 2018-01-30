@@ -27,7 +27,6 @@ const App = () => {
           for (let i = 0; i < p.els.views.length; i ++) {
             p.els.views[i].classList.add("hidden");
           }
-          p.els.views[0].classList.remove("hidden"); ////
           p.els[val].classList.remove("hidden");
         }
 

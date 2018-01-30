@@ -36,16 +36,7 @@ const Level = (options, room) => {
   };
 
   const gameLoop = () => {
-    const tick = ({ intervalTime: delta }) => {
-      const s = delta / 1000000000;
-
-      if (!self.paused) {
-        self.room.users.forEach((user) => user.avatar.tick(s));
-      }
-    };
-
-
-    self.timer.setInterval(tick, [self.timer], "1s");
+    self.timer.setInterval(tick, [self.timer], ".05s");
   };
 
   const load = (name) => {
@@ -91,12 +82,20 @@ const Level = (options, room) => {
     return nearestRow(y) * self.tileHeight;
   };
 
-  const unload = () => {
-    self.timer.clearInterval();
+  const sync = (data) => {
+    util.syncObject(self, levelSanitizer, data);
   };
 
-  const update = (data) => {
-    util.updateObject(self, levelSanitizer, data);
+  const tick = ({ intervalTime: delta }) => {
+    const ms = delta / 1000000;
+
+    if (!self.paused) {
+      self.room.users.forEach((user) => user.avatar.tick(ms));
+    }
+  };
+
+  const unload = () => {
+    self.timer.clearInterval();
   };
 
 
@@ -157,7 +156,7 @@ const Level = (options, room) => {
             }
           };
 
-          //// p.user.room.clients.emit("updateLevel", data);
+          //// p.user.room.clients.emit("syncLevel", data);
           obj[prop] = val;
         }
 

@@ -2,13 +2,13 @@
 
 
 const Lobby = () => {
-  const addRoom = (room) => {
-    const newRoom = Room(room.props, self);
+  const addRoom = (data) => {
+    const newRoom = Room(data.props, self);
     self.rooms.set(newRoom.id, newRoom);
   };
 
-  const addUser = (user) => {
-    const newUser = User(user.props, self);
+  const addUser = (data) => {
+    const newUser = User(data.props, self);
     self.users.set(newUser.id, newUser);
   };
 
@@ -30,8 +30,8 @@ const Lobby = () => {
     self.socket.on("loadLocalRoom", loadLocalRoom);
     self.socket.on("loadPersonalUser", loadPersonalUser);
     self.socket.on("loadLobby", load);
-    self.socket.on("updateLobbyRoom", updateRoom);
-    self.socket.on("updateLobbyUser", updateUser);
+    self.socket.on("syncLobbyRoom", syncRoom);
+    self.socket.on("syncLobbyUser", syncUser);
   };
 
   const listenToUser = () => {
@@ -54,7 +54,7 @@ const Lobby = () => {
     const el = self.els.userList.querySelector(`[data-id="${id}"]`);
     el.classList.add("personal");
 
-    app.user.load(self.users.get(id));
+    app.user.load(id);
     app.view = "lobby";
   };
 
@@ -94,6 +94,14 @@ const Lobby = () => {
     }
   };
 
+  const syncRoom = (data) => {
+    Object.assign(self.rooms.get(data.id), data.props);
+  };
+
+  const syncUser = (data) => {
+    Object.assign(self.users.get(data.id), data.props);
+  };
+
   const unlistenToUser = () => {
     self.els.createRoom.removeEventListener("click", actions.createRoom);
     self.els.login.removeEventListener("click", actions.login);
@@ -127,14 +135,6 @@ const Lobby = () => {
 
   const unloadUsers = () => {
     self.users.clear();
-  };
-
-  const updateRoom = (room) => {
-    Object.assign(self.rooms.get(room.id), room.props);
-  };
-
-  const updateUser = (user) => {
-    Object.assign(self.users.get(user.id), user.props);
   };
 
 
