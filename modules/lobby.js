@@ -6,7 +6,20 @@ const Room = require("./room"),
 
 
 const Lobby = (server) => {
-  const addRoom = (name = "", owner) => {
+  const listen = () => {
+    self.clients.on("connection", (socket) => {
+      try {
+        loadUser(socket);
+      }
+      catch (err) {
+        console.warn(err);
+        socket.emit("ioError", err);
+        socket.disconnect();
+      }
+    });
+  };
+
+  const loadRoom = (name = "", owner) => {
     if (owner.room) {
       throw "The user can't create a room while in another room.";
     }
@@ -29,7 +42,7 @@ const Lobby = (server) => {
     return newRoom;
   };
 
-  const addUser = (socket) => {
+  const loadUser = (socket) => {
     if (self.users.size >= self.maxUsers) {
       throw "The server can't hold any more users.";
     }
@@ -40,25 +53,12 @@ const Lobby = (server) => {
     return newUser;
   };
 
-  const deleteRoom = (roomId) => {
+  const unloadRoom = (roomId) => {
     self.rooms.delete(roomId);
   };
 
-  const deleteUser = (userId) => {
+  const unloadUser = (userId) => {
     self.users.delete(userId);
-  };
-
-  const listen = () => {
-    self.clients.on("connection", (socket) => {
-      try {
-        addUser(socket);
-      }
-      catch (err) {
-        console.warn(err);
-        socket.emit("ioError", err);
-        socket.disconnect();
-      }
-    });
   };
 
 
@@ -70,10 +70,10 @@ const Lobby = (server) => {
       rooms: new Map(),
       users: new Map(),
 
-      get addRoom () { return addRoom; },
-      get addUser () { return addUser; },
-      get deleteRoom () { return deleteRoom; },
-      get deleteUser () { return deleteUser; },
+      get loadRoom () { return loadRoom; },
+      get loadUser () { return loadUser; },
+      get unloadRoom () { return unloadRoom; },
+      get unloadUser () { return unloadUser; },
 
       get lobbyData () {
         const data = {
@@ -102,25 +102,25 @@ const Lobby = (server) => {
     const p = properties;
 
     p.rooms.set = function (id, room) {
-      p.clients.emit("addLobbyRoom", room.lobbyData);
+      p.clients.emit("loadLobbyRoom", room.lobbyData);
       return Map.prototype.set.apply(this, arguments);
     };
 
     p.rooms.delete = function (id) {
-      p.clients.emit("deleteLobbyRoom", id);
+      p.clients.emit("unloadLobbyRoom", id);
       return Map.prototype.delete.apply(this, arguments);
     };
 
     p.users.set = function (id, user) {
       user.socket.emit("loadLobby", p.lobbyData);
-      p.clients.emit("addLobbyUser", user.lobbyData);
+      p.clients.emit("loadLobbyUser", user.lobbyData);
       user.socket.emit("syncLobbyUser", user.personalData);
       user.socket.emit("loadPersonalUser", user.id);
       return Map.prototype.set.apply(this, arguments);
     };
 
     p.users.delete = function (id) {
-      p.clients.emit("deleteLobbyUser", id);
+      p.clients.emit("unloadLobbyUser", id);
       return Map.prototype.delete.apply(this, arguments);
     };
 

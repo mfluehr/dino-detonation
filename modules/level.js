@@ -8,33 +8,6 @@ const Bomb = require("./bomb"),
 
 
 const Level = (options, room) => {
-  const addBomb = (ownerId, x, y) => {
-    const bomb = Bomb({
-      level: self,
-      x: roundToTileX(x),
-      y: roundToTileY(y),
-      ownerId
-    });
-
-    if (tileOpenAt(x, y)) {
-      self.bombs.push(bomb);
-      return true;
-    }
-
-    return false;
-  };
-
-  const addPickup = (x, y) => {
-    ////
-  };
-
-  const deleteUser = (id) => {
-    //// const avatar = self.room.users.get(id).avatar;
-    //
-    // avatar.kill();
-    // users.avatars.delete(avatar);  // TODO: only delete once animation completed
-  };
-
   const gameLoop = () => {
     self.timer.setInterval(tick, [self.timer], ".05s");
   };
@@ -64,6 +37,26 @@ const Level = (options, room) => {
     initTiles();
     initAvatars();
     gameLoop();
+  };
+
+  const loadBomb = (ownerId, x, y) => {
+    const bomb = Bomb({
+      level: self,
+      x: roundToTileX(x),
+      y: roundToTileY(y),
+      ownerId
+    });
+
+    if (tileOpenAt(x, y)) {
+      self.bombs.push(bomb);
+      return true;
+    }
+
+    return false;
+  };
+
+  const loadPickup = (x, y) => {
+    ////
   };
 
   const nearestCol = (x) => {
@@ -98,6 +91,13 @@ const Level = (options, room) => {
     self.timer.clearInterval();
   };
 
+  const unloadUser = (id) => {
+    //// const avatar = self.room.users.get(id).avatar;
+    //
+    // avatar.kill();
+    // users.avatars.delete(avatar);  // TODO: only delete once animation completed
+  };
+
 
   const levelSanitizer = {
     paused: (paused) => sanitizer.toBoolean(paused)
@@ -118,11 +118,11 @@ const Level = (options, room) => {
       tileHeight: 80,
       timer: new NanoTimer(),
 
-      get addBomb () { return addBomb; },
-      get addUser () { return resetUser; },
-      get deleteUser () { return deleteUser; },
       get load () { return load; },
+      get loadBomb () { return loadBomb; },
+      get loadUser () { return resetUser; },
       get unload () { return unload; },
+      get unloadUser () { return unloadUser; },
 
       get localData () {
         return {

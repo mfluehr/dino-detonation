@@ -6,7 +6,7 @@ const Level = require("./level"),
 
 
 const Room = (name = "New Room", lobby, ownerId) => {
-  const addUser = (id) => {
+  const loadUser = (id) => {
     const user = self.lobby.users.get(id);
 
     if (self.users.get(id)) {
@@ -21,18 +21,30 @@ const Room = (name = "New Room", lobby, ownerId) => {
 
     if (self.level) {
       //// TODO: dynamic adding of avatars
-      // self.level.addUser(user);
+      // self.level.loadUser(user);
     }
 
     self.users.set(id, user);
     user.room = self;
   };
 
-  const deleteUser = (id) => {
+  const startGame = () => {
+    self.level = Level(self.levelOptions, self);
+  };
+
+  const unload = () => {
+    if (self.level) {
+      self.level.unload();
+    }
+
+    self.lobby.unloadRoom(self.id);
+  };
+
+  const unloadUser = (id) => {
     const user = self.lobby.users.get(id);
 
     if (self.level) {
-      self.level.deleteUser(user);
+      self.level.unloadUser(user);
     }
 
     self.users.delete(id);
@@ -45,18 +57,6 @@ const Room = (name = "New Room", lobby, ownerId) => {
       const it = self.users.keys();
       self.ownerId = it.next().value;
     }
-  };
-
-  const startGame = () => {
-    self.level = Level(self.levelOptions, self);
-  };
-
-  const unload = () => {
-    if (self.level) {
-      self.level.unload();
-    }
-
-    self.lobby.deleteRoom(self.id);
   };
 
 
@@ -72,9 +72,9 @@ const Room = (name = "New Room", lobby, ownerId) => {
       levelOptions: LevelOptions(),
       users: new Map(),
 
-      get addUser () { return addUser; },
-      get deleteUser () { return deleteUser; },
+      get loadUser () { return loadUser; },
       get startGame () { return startGame; },
+      get unloadUser () { return unloadUser; },
 
       get clients () {
         return p.lobby.clients.in(p.id);
@@ -154,14 +154,14 @@ const Room = (name = "New Room", lobby, ownerId) => {
     p.users.set = function (id, user) {
       Map.prototype.set.apply(this, arguments);
       p.numUsers = p.users.size;
-      p.clients.emit("addLocalUser", user.localData);
+      p.clients.emit("loadLocalUser", user.localData);
       return p.users;
     };
 
     p.users.delete = function (id) {
       Map.prototype.delete.apply(this, arguments);
       p.numUsers = p.users.size;
-      p.clients.emit("deleteLocalUser", id);
+      p.clients.emit("unloadLocalUser", id);
       return p.users;
     };
 

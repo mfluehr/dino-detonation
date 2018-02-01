@@ -14,24 +14,13 @@ const Room = (properties, lobby) => {
 };
 
 const LocalRoom = (lobby, data) => {
-  const addUser = (data) => {
-    const localUser = LocalUser(lobby.users.get(data.id), self);
-    self.users.set(localUser.id, localUser);
-    Object.assign(localUser, data.props);
-    Object.assign(localUser.avatar, data.avatar.props);
-  };
-
-  const deleteUser = (id) => {
-    self.users.delete(id);
-  };
-
   const listenToServer = () => {
-    self.socket.on("addLocalUser", addUser);
-    self.socket.on("deleteLocalUser", deleteUser);
     self.socket.on("loadLocalLevel", loadLocalLevel);
+    self.socket.on("loadLocalUser", loadUser);
     self.socket.on("syncAvatar", syncAvatar);
     self.socket.on("syncLocalRoom", syncRoom);
     self.socket.on("syncLocalUser", syncUser);
+    self.socket.on("unloadLocalUser", unloadUser);
   };
 
   const listenToUser = () => {
@@ -41,7 +30,7 @@ const LocalRoom = (lobby, data) => {
 
   const load = (data) => {
     app.user.room = self;
-    data.users.forEach((user) => addUser(user));
+    data.users.forEach((user) => loadUser(user));
     Object.assign(self, data.props);
 
     const el = self.els.userList.querySelector(`[data-id="${app.user.id}"]`);
@@ -54,6 +43,13 @@ const LocalRoom = (lobby, data) => {
 
   const loadLocalLevel = (data) => {
     self.level = LocalLevel(self, data);
+  };
+
+  const loadUser = (data) => {
+    const localUser = LocalUser(lobby.users.get(data.id), self);
+    self.users.set(localUser.id, localUser);
+    Object.assign(localUser, data.props);
+    Object.assign(localUser.avatar, data.avatar.props);
   };
 
   const showUser = ({ id, name }) => {
@@ -85,12 +81,12 @@ const LocalRoom = (lobby, data) => {
   };
 
   const unlistenToServer = () => {
-    self.socket.off("addLocalUser", addUser);
-    self.socket.off("deleteLocalUser", deleteUser);
     self.socket.off("loadLocalLevel", loadLocalLevel);
+    self.socket.off("loadLocalUser", loadUser);
     self.socket.off("syncAvatar", syncAvatar);
     self.socket.off("syncLocalRoom", syncRoom);
     self.socket.off("syncLocalUser", syncUser);
+    self.socket.off("unloadLocalUser", unloadUser);
   };
 
   const unlistenToUser = () => {
@@ -116,6 +112,10 @@ const LocalRoom = (lobby, data) => {
     if (self.level) {
       self.level.unload();
     }
+  };
+
+  const unloadUser = (id) => {
+    self.users.delete(id);
   };
 
   const unloadUsers = () => {

@@ -4,12 +4,7 @@
 const LocalLevel = (room, data) => {
   const initCanvas = () => {
     const initSprites = () => {
-      const avatar = new PIXI.Sprite(
-        PIXI.loader.resources.avatar.texture
-      );
-
-      self.sprites.set("avatar", avatar);
-      gfx.stage.addChild(self.sprites.get("avatar"));
+      initAvatarSprites();
       gfx.ticker.add(delta => gameLoop(delta));
     };
 
@@ -51,7 +46,7 @@ const LocalLevel = (room, data) => {
 
     room.users.forEach((user) => {
       const avatar = user.avatar;
-      self.sprites.get("avatar").position.set(avatar.x, avatar.y);
+      self.sprites.get(user.id).position.set(avatar.x, avatar.y);
     });
   };
 
@@ -60,8 +55,16 @@ const LocalLevel = (room, data) => {
     draw();
   };
 
+  const initAvatarSprites = () => {
+    room.users.forEach((user) => {
+      const texture = PIXI.loader.resources.avatar.texture;
+      const sprite = new PIXI.Sprite(texture);
+      self.sprites.set(user.id, sprite);
+      gfx.stage.addChild(self.sprites.get(user.id));
+    });
+  };
+
   const interpolate = (delta) => {
-    ////
     const ms = delta / 60 * 1000;
 
     room.users.forEach((user) => {

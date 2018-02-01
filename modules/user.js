@@ -12,7 +12,7 @@ const User = (socket, lobby) => {
 
     if (room) {
       try {
-        room.addUser(self.id);
+        room.loadUser(self.id);
       }
       catch (err) {
         console.warn(err);
@@ -42,7 +42,7 @@ const User = (socket, lobby) => {
     };
 
 
-    self.socket.on("addRoom", (name) => {
+    self.socket.on("loadRoom", (name) => {
       name = sanitizer.toString(name, 20);
 
       if (!name) {
@@ -50,7 +50,7 @@ const User = (socket, lobby) => {
       }
 
       try {
-        const room = self.lobby.addRoom(name, self);
+        const room = self.lobby.loadRoom(name, self);
         joinRoom(room.id);
       }
       catch (err) {
@@ -61,10 +61,10 @@ const User = (socket, lobby) => {
 
     self.socket.on("disconnect", (reason) => {
       if (self.room) {
-        self.room.deleteUser(self.id);
+        self.room.unloadUser(self.id);
       }
 
-      self.lobby.deleteUser(self.id);
+      self.lobby.unloadUser(self.id);
     });
 
     self.socket.on("joinRoom", (id) => {
@@ -75,7 +75,7 @@ const User = (socket, lobby) => {
     self.socket.on("leaveRoom", () => {
       if (self.room) {
         self.socket.leave(self.room.id);
-        self.room.deleteUser(self.id);
+        self.room.unloadUser(self.id);
       }
       else {
         self.socket.emit("ioError", "The user isn't in a room.");

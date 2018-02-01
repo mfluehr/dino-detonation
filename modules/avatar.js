@@ -11,7 +11,7 @@ const Avatar = (socket, user) => {
     if (self.bombsUsed < self.capacity) {
       // const x = col * tileSize,
       //       y = row * tileSize;
-      // if (self.user.room.level.addBomb(self.user.id, x, y)) {
+      // if (self.user.room.level.loadBomb(self.user.id, x, y)) {
       //   self.bombsUsed ++;
       // }
     }
