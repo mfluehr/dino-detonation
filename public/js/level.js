@@ -126,7 +126,6 @@ const LocalLevel = (room, data) => {
 
     const properties = {
       room,
-      socket: room.socket,
       sprites: new Map(),
 
       get unload () { return unload; }
@@ -135,7 +134,7 @@ const LocalLevel = (room, data) => {
     const p = new Proxy(properties, {
       set: (obj, prop, val) => {
         if (editable.has(prop)) {
-          p.socket.emit("syncLevel", { prop, val });
+          app.socket.emit("syncLevel", { prop, val });
           return true;
         }
 

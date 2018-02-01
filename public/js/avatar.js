@@ -14,7 +14,7 @@ const LocalAvatar = (user) => {
 
   const self = (() => {
     const properties = {
-      socket: app.lobby.socket,
+      socket: app.socket,
       user,
 
       get sync () { return sync; },
@@ -70,7 +70,7 @@ const PersonalAvatar = (user) => {
 
       switch (a) {
         case "dropBomb":
-          self.socket.emit(a);
+          app.socket.emit(a);
           break;
         case "moveUp":
           self.rad = Math.PI * 3/2;
@@ -109,7 +109,6 @@ const PersonalAvatar = (user) => {
         ["ArrowLeft", "moveLeft"],
         ["p", "pauseGame"]
       ]),
-      socket: user.socket,
       user,
 
       get endAction () { return endAction; },
@@ -122,7 +121,7 @@ const PersonalAvatar = (user) => {
     const p = new Proxy(properties, {
       set: (obj, prop, val) => {
         if (editable.has(prop)) {
-          p.socket.emit("syncAvatar", { prop, val });
+          app.socket.emit("syncAvatar", { prop, val });
           self.local[prop] = val;
           return true;
         }

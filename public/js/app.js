@@ -2,6 +2,13 @@
 
 
 const App = () => {
+  const load = () => {
+    self.socket = io.connect(self.url);
+    self.lobby = Lobby();
+    self.user = PersonalUser(self.lobby);
+  };
+
+
   const self = (() => {
     const properties = Object.seal({
       els: {
@@ -10,10 +17,13 @@ const App = () => {
         room: document.getElementById("room-view"),
         game: document.getElementById("game-view")
       },
-      lobby: {},
+      lobby: undefined,
+      socket: undefined,
       url: "localhost:4000",
-      user: {},
-      view: undefined
+      user: undefined,
+      view: undefined,
+
+      get load () { return load; }
     });
 
     const p = new Proxy(properties, {
@@ -43,5 +53,4 @@ const App = () => {
 
 
 const app = App();
-app.lobby = Lobby();
-app.user = PersonalUser(app.lobby);
+app.load();

@@ -15,12 +15,12 @@ const Room = (properties, lobby) => {
 
 const LocalRoom = (lobby, data) => {
   const listenToServer = () => {
-    self.socket.on("loadLocalLevel", loadLocalLevel);
-    self.socket.on("loadLocalUser", loadUser);
-    self.socket.on("syncAvatar", syncAvatar);
-    self.socket.on("syncLocalRoom", syncRoom);
-    self.socket.on("syncLocalUser", syncUser);
-    self.socket.on("unloadLocalUser", unloadUser);
+    app.socket.on("loadLocalLevel", loadLocalLevel);
+    app.socket.on("loadLocalUser", loadUser);
+    app.socket.on("syncAvatar", syncAvatar);
+    app.socket.on("syncLocalRoom", syncRoom);
+    app.socket.on("syncLocalUser", syncUser);
+    app.socket.on("unloadLocalUser", unloadUser);
   };
 
   const listenToUser = () => {
@@ -81,12 +81,12 @@ const LocalRoom = (lobby, data) => {
   };
 
   const unlistenToServer = () => {
-    self.socket.off("loadLocalLevel", loadLocalLevel);
-    self.socket.off("loadLocalUser", loadUser);
-    self.socket.off("syncAvatar", syncAvatar);
-    self.socket.off("syncLocalRoom", syncRoom);
-    self.socket.off("syncLocalUser", syncUser);
-    self.socket.off("unloadLocalUser", unloadUser);
+    app.socket.off("loadLocalLevel", loadLocalLevel);
+    app.socket.off("loadLocalUser", loadUser);
+    app.socket.off("syncAvatar", syncAvatar);
+    app.socket.off("syncLocalRoom", syncRoom);
+    app.socket.off("syncLocalUser", syncUser);
+    app.socket.off("unloadLocalUser", unloadUser);
   };
 
   const unlistenToUser = () => {
@@ -100,7 +100,7 @@ const LocalRoom = (lobby, data) => {
   };
 
   const unload = () => {
-    self.socket.emit("leaveRoom");
+    app.socket.emit("leaveRoom");
     unlistenToServer();
     unlistenToUser();
     unloadLevel();
@@ -130,7 +130,6 @@ const LocalRoom = (lobby, data) => {
         startGame: document.getElementById("room-view-start"),
         userList: document.getElementById("room-view-users")
       },
-      socket: lobby.socket,
       users: new Map(),
 
       get showUserUpdate () { return showUserUpdate; },

@@ -3,17 +3,17 @@
 
 const Lobby = () => {
   const listenToServer = () => {
-    self.socket.on("disconnect", unload);
-    self.socket.on("ioError", (err) => console.warn(err));
-    self.socket.on("loadLobby", load);
-    self.socket.on("loadLobbyRoom", loadRoom);
-    self.socket.on("loadLobbyUser", loadUser);
-    self.socket.on("loadLocalRoom", loadLocalRoom);
-    self.socket.on("loadPersonalUser", loadPersonalUser);
-    self.socket.on("syncLobbyRoom", syncRoom);
-    self.socket.on("syncLobbyUser", syncUser);
-    self.socket.on("unloadLobbyRoom", unloadRoom);
-    self.socket.on("unloadLobbyUser", unloadUser);
+    app.socket.on("disconnect", unload);
+    app.socket.on("ioError", (err) => console.warn(err));
+    app.socket.on("loadLobby", load);
+    app.socket.on("loadLobbyRoom", loadRoom);
+    app.socket.on("loadLobbyUser", loadUser);
+    app.socket.on("loadLocalRoom", loadLocalRoom);
+    app.socket.on("loadPersonalUser", loadPersonalUser);
+    app.socket.on("syncLobbyRoom", syncRoom);
+    app.socket.on("syncLobbyUser", syncUser);
+    app.socket.on("unloadLobbyRoom", unloadRoom);
+    app.socket.on("unloadLobbyUser", unloadUser);
   };
 
   const listenToUser = () => {
@@ -141,7 +141,7 @@ const Lobby = () => {
   const actions = {
     createRoom: () => {
       const roomName = self.els.roomName.value;
-      self.socket.emit("loadRoom", roomName);
+      app.socket.emit("loadRoom", roomName);
     },
     joinRoom: (e) => {
       if (e.target.tagName === "A") {
@@ -164,7 +164,6 @@ const Lobby = () => {
         userList: document.getElementById("lobby-view-users"),
         userName: document.getElementById("user-name")
       },
-      socket: io.connect(app.url),
       rooms: new Map(),
       users: new Map(),
 

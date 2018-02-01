@@ -35,7 +35,7 @@ const LocalUser = (base, room) => {
 
 const PersonalUser = (lobby) => {
   const joinRoom = (id) => {
-    self.socket.emit("joinRoom", id);
+    app.socket.emit("joinRoom", id);
   };
 
   const load = (id) => {
@@ -43,7 +43,7 @@ const PersonalUser = (lobby) => {
   };
 
   const startGame = () => {
-    self.socket.emit("startGame");
+    app.socket.emit("startGame");
   };
 
 
@@ -51,8 +51,6 @@ const PersonalUser = (lobby) => {
     const editable = new Set(["email", "name"]);
 
     const properties = {
-      socket: lobby.socket,
-
       get createRoom () { return createRoom; },
       get joinRoom () { return joinRoom; },
       get load () { return load; },
@@ -63,7 +61,7 @@ const PersonalUser = (lobby) => {
     const p = new Proxy(properties, {
       set: (obj, prop, val) => {
         if (editable.has(prop)) {
-          p.socket.emit("syncUser", { prop, val });
+          app.socket.emit("syncUser", { prop, val });
           return true;
         }
 
