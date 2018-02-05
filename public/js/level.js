@@ -94,6 +94,7 @@ const LocalLevel = (room, data) => {
 
     ////
     // tiles
+    // data.tiles.forEach();
 
     initCanvas();
     app.user.avatar.load();

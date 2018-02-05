@@ -39,7 +39,7 @@ const TileType = ({
   return self;
 };
 
-const Tile = (type) => {
+const Tile = (num) => {
   const damage = (amount = 1) => {
     self.hp -= amount;
 
@@ -59,14 +59,20 @@ const Tile = (type) => {
 
   const self = (() => {
     const properties = Object.seal(Object.assign({
-      type: tileTypes[type]
-    }, tileTypes[type].stats));
+      type: tileTypes[num],
+
+      get localData () {
+        return {
+          hp: p.hp,
+          type: num
+        };
+      }
+    }, tileTypes[num].stats));
 
     const p = properties;
 
     return p;
   })();
-
 
   return self;
 };

@@ -138,11 +138,9 @@ const Level = (options, room) => {
         };
       },
       get tileData () {
-        const tileData = [];
-        p.tiles.forEach((tile, tileId) => {
-          tileData.push(tile.localData);
+        return p.tiles.map((row) => {
+          return row.map((val) => val.localData);
         });
-        return tileData;
       }
     });
 
@@ -169,7 +167,6 @@ const Level = (options, room) => {
 
 
   load(options.name);
-
 
   return self;
 };
