@@ -70,6 +70,7 @@ const util = {
 
 
   Array2: (w, h, val = 0) => {
+    //// TODO: new Array is inefficient because it has holes
     const cols = new Array(h);
     const rows = new Array(w).fill(val);
     cols.fill(rows);

@@ -1,7 +1,7 @@
 "use strict";
 
 const Room = require("./room"),
-      socket = require("socket.io"),
+      io = require("socket.io"),
       User = require("./user");
 
 
@@ -64,7 +64,7 @@ const Lobby = (server) => {
 
   const self = (() => {
     const properties = Object.seal({
-      clients: socket(server),
+      clients: io(server),
       maxRooms: 5,
       maxUsers: 40,
       rooms: new Map(),

@@ -3,11 +3,6 @@
 
 const LocalLevel = (room, data) => {
   const initCanvas = () => {
-    const initSprites = () => {
-      initAvatarSprites();
-      gfx.ticker.add(delta => gameLoop(delta));
-    };
-
     const initText = () => {
       const style = new PIXI.TextStyle({
         fill: "yellow",
@@ -19,9 +14,26 @@ const LocalLevel = (room, data) => {
       gfx.stage.addChild(msg);
     };
 
+    const initTileTextures = () => {
+      const texture = PIXI.loader.resources["images/tiles.png"].texture;
+      const rect = new PIXI.Rectangle(192, 128, 64, 64);
+
+      texture.frame = rect;
+    };
+
+    const initTextures = () => {
+      // initTileTextures();
+
+
+      // initTileSprites();
+      initAvatarSprites();
+      gfx.ticker.add(delta => gameLoop(delta));
+    };
+
 
     const imageFiles = [
-            { name: "avatar", url: "images/avatar.png" }
+            { name: "avatar", url: "images/avatar.png" },
+            { name: "tiles", url: "images/tiles.png" }
           ],
           pixiOptions = {
             width: 600,
@@ -35,7 +47,7 @@ const LocalLevel = (room, data) => {
 
     PIXI.loader.add(imageFiles)
         //// .on("progress", spriteProgress)
-        .load(initSprites);
+        .load(initTextures);
     app.els.game.appendChild(gfx.view);
   };
 
@@ -61,6 +73,17 @@ const LocalLevel = (room, data) => {
       const sprite = new PIXI.Sprite(texture);
       self.sprites.set(user.id, sprite);
       gfx.stage.addChild(self.sprites.get(user.id));
+    });
+  };
+
+  const initTileSprites = () => {
+    self.tiles.forEach((row) => {
+      row.forEach((tile) => {
+        ////tile.type
+        const texture = PIXI.loader.resources["tile" + tile.type].texture;
+        const sprite = new PIXI.Sprite(texture);
+        gfx.stage.addChild(sprite);
+      });
     });
   };
 
@@ -94,7 +117,9 @@ const LocalLevel = (room, data) => {
 
     ////
     // tiles
-    // data.tiles.forEach();
+    self.tiles = data.tiles.map((row) => {
+      return row.map((tile) => Tile(tile));
+    });
 
     initCanvas();
     app.user.avatar.load();
@@ -128,6 +153,7 @@ const LocalLevel = (room, data) => {
     const properties = {
       room,
       sprites: new Map(),
+      tiles: [],
 
       get unload () { return unload; }
     };
