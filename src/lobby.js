@@ -1,7 +1,11 @@
 "use strict";
 
+const Room = require("./room"),
+      User = require("./user"),
+      LocalRoom = require("./local-room");
 
-const Lobby = () => {
+
+const Lobby = (app) => {
   const listenToServer = () => {
     app.socket.on("disconnect", unload);
     app.socket.on("ioError", (err) => console.warn(err));
@@ -23,13 +27,22 @@ const Lobby = () => {
   };
 
   const load = (data) => {
+    self.els = {
+      createRoom: document.getElementById("create-room"),
+      login: document.getElementById("login"),
+      roomList: document.getElementById("lobby-view-rooms"),
+      roomName: document.getElementById("room-name"),
+      userList: document.getElementById("lobby-view-users"),
+      userName: document.getElementById("user-name")
+    };
+
     data.rooms.forEach((room) => loadRoom(room));
     data.users.forEach((user) => loadUser(user));
     listenToUser();
   };
 
   const loadLocalRoom = (data) => {
-    app.user.room = LocalRoom(self, data);
+    app.user.room = LocalRoom(app, self, data);
   };
 
   const loadPersonalUser = (id) => {
@@ -156,14 +169,7 @@ const Lobby = () => {
 
   const self = (() => {
     const properties = Object.seal({
-      els: {
-        createRoom: document.getElementById("create-room"),
-        login: document.getElementById("login"),
-        roomList: document.getElementById("lobby-view-rooms"),
-        roomName: document.getElementById("room-name"),
-        userList: document.getElementById("lobby-view-users"),
-        userName: document.getElementById("user-name")
-      },
+      els: undefined,
       rooms: new Map(),
       users: new Map(),
 
@@ -216,3 +222,6 @@ const Lobby = () => {
 
   return self;
 };
+
+
+module.exports = Lobby;

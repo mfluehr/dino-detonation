@@ -1,7 +1,9 @@
 "use strict";
 
+const Tile = require("./tile");
 
-const LocalLevel = (room, data) => {
+
+const LocalLevel = (app, room, data) => {
   const initCanvas = () => {
     const initText = () => {
       const style = new PIXI.TextStyle({
@@ -179,3 +181,6 @@ const LocalLevel = (room, data) => {
 
   return self;
 };
+
+
+module.exports = LocalLevel;

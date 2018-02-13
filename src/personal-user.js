@@ -1,39 +1,9 @@
 "use strict";
 
+const PersonalAvatar = require("./personal-avatar");
 
-const User = (properties = {}, lobby) => {
-  const self = new Proxy(properties, {
-    set: (obj, prop, val) => {
-      obj[prop] = val;
-      lobby.showUserUpdate(self, prop);
-      return true;
-    }
-  });
 
-  return self;
-};
-
-const LocalUser = (base, room) => {
-  const self = (() => {
-    const properties = Object.assign({}, base);
-
-    const p = new Proxy(properties, {
-      set: (obj, prop, val) => {
-        obj[prop] = val;
-        room.showUserUpdate(p, prop);
-        return true;
-      }
-    });
-
-    properties.avatar = LocalAvatar(p);
-
-    return p;
-  })();
-
-  return self;
-};
-
-const PersonalUser = (lobby) => {
+const PersonalUser = (app, lobby) => {
   const joinRoom = (id) => {
     app.socket.emit("joinRoom", id);
   };
@@ -70,7 +40,7 @@ const PersonalUser = (lobby) => {
       }
     });
 
-    properties.avatar = PersonalAvatar(p);
+    properties.avatar = PersonalAvatar(app, p);
 
     return p;
   })();
@@ -78,3 +48,6 @@ const PersonalUser = (lobby) => {
 
   return self;
 };
+
+
+module.exports = PersonalUser;

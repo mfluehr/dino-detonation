@@ -6,3 +6,6 @@ const Tile = (data) => {
 
   return self;
 };
+
+
+module.exports = Tile;

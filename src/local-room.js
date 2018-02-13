@@ -1,19 +1,10 @@
 "use strict";
 
+const LocalLevel = require("./local-level"),
+      LocalUser = require("./local-user");
 
-const Room = (properties, lobby) => {
-  const self = new Proxy(properties, {
-    set: (obj, prop, val) => {
-      obj[prop] = val;
-      lobby.showRoomUpdate(self, prop);
-      return true;
-    }
-  });
 
-  return self;
-};
-
-const LocalRoom = (lobby, data) => {
+const LocalRoom = (app, lobby, data) => {
   const listenToServer = () => {
     app.socket.on("loadLocalLevel", loadLocalLevel);
     app.socket.on("loadLocalUser", loadUser);
@@ -29,6 +20,12 @@ const LocalRoom = (lobby, data) => {
   };
 
   const load = (data) => {
+    self.els = {
+      leaveRoom: document.getElementById("room-view-leave"),
+      startGame: document.getElementById("room-view-start"),
+      userList: document.getElementById("room-view-users")
+    };
+
     app.user.room = self;
     data.users.forEach((user) => loadUser(user));
     Object.assign(self, data.props);
@@ -42,11 +39,11 @@ const LocalRoom = (lobby, data) => {
   };
 
   const loadLocalLevel = (data) => {
-    self.level = LocalLevel(self, data);
+    self.level = LocalLevel(app, self, data);
   };
 
   const loadUser = (data) => {
-    const localUser = LocalUser(lobby.users.get(data.id), self);
+    const localUser = LocalUser(app, lobby.users.get(data.id), self);
     self.users.set(localUser.id, localUser);
     Object.assign(localUser, data.props);
     Object.assign(localUser.avatar, data.avatar.props);
@@ -125,11 +122,7 @@ const LocalRoom = (lobby, data) => {
 
   const self = (() => {
     const properties = {
-      els: {
-        leaveRoom: document.getElementById("room-view-leave"),
-        startGame: document.getElementById("room-view-start"),
-        userList: document.getElementById("room-view-users")
-      },
+      els: undefined,
       users: new Map(),
 
       get showUserUpdate () { return showUserUpdate; },
@@ -182,3 +175,6 @@ const LocalRoom = (lobby, data) => {
 
   return self;
 };
+
+
+module.exports = LocalRoom;

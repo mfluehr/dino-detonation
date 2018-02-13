@@ -1,9 +1,11 @@
 {
   "name": "dino-detonation",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "A multiplayer game played in the browser",
   "main": "app.js",
   "scripts": {
+    "start": "webpack-dev-server --open --config webpack.dev.js",
+    "build": "webpack --config webpack.prod.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -21,6 +23,17 @@
     "validator": "^9.2.0"
   },
   "devDependencies": {
-    "nodemon": "^1.14.11"
+    "clean-webpack-plugin": "^0.1.18",
+    "nodemon": "^1.14.11",
+    "uglifyjs-webpack-plugin": "^1.1.8",
+    "webpack": "^3.11.0",
+    "webpack-dev-server": "^2.11.1",
+    "webpack-merge": "^4.1.1"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "public/*",
+      "src/*"
+    ]
   }
 }
