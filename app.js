@@ -24,5 +24,5 @@ app.use("/", routes);
 app.use(express.static("public"));
 
 // Game lobby
-const lobby = require("./modules/lobby")(server);
+const lobby = require("./modules/server/lobby")(server);
 routes.setLobby(lobby);

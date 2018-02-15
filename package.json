@@ -33,7 +33,7 @@
   "nodemonConfig": {
     "ignore": [
       "public/*",
-      "src/*"
+      "modules/client/*"
     ]
   }
 }
