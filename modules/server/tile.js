@@ -1,6 +1,6 @@
 "use strict";
 
-const tileTypes = require("./tile-types");
+const tileTypes = require("../common/tile-types");
 
 
 const Tile = (num) => {

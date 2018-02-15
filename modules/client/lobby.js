@@ -4,7 +4,6 @@ const Room = require("./room"),
       User = require("./user"),
       LocalRoom = require("./local-room");
 
-
 const Lobby = (app) => {
   const listenToServer = () => {
     app.socket.on("disconnect", unload);
